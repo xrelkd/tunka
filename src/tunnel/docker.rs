@@ -72,7 +72,6 @@ impl DockerTunnel {
         }
 
         args.push(self.image_name.clone());
-        println!("{}", args.join(" "));
 
         Self::convert_output(
             Command::new("docker")
