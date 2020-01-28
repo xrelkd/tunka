@@ -4,9 +4,11 @@ use crate::context::Context;
 use crate::error::Error;
 
 mod docker;
+mod docker_openvpn;
 mod ssh;
 
 pub use self::docker::DockerTunnel;
+pub use self::docker_openvpn::DockerOpenVPNTunnel;
 pub use self::ssh::SshTunnel;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq, Hash)]
@@ -19,6 +21,7 @@ pub struct TunnelMeta {
 pub enum TunnelType {
     Ssh,
     Docker,
+    DockerOpenVPN,
 }
 
 impl std::fmt::Display for TunnelType {
@@ -26,6 +29,7 @@ impl std::fmt::Display for TunnelType {
         match self {
             TunnelType::Ssh => write!(f, "SSH tunnel"),
             TunnelType::Docker => write!(f, "Docker Tunnel"),
+            TunnelType::DockerOpenVPN => write!(f, "Docker OpenVPN Tunnel"),
         }
     }
 }

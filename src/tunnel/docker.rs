@@ -1,9 +1,15 @@
 use std::net::SocketAddr;
+use std::path::PathBuf;
 use std::process::{Command, ExitStatus, Stdio};
 
 use crate::context::Context;
 use crate::error::Error;
 use crate::tunnel::{Tunnel, TunnelMeta, TunnelType};
+
+pub struct DockerMount {
+    pub host_endpoint: PathBuf,
+    pub container_endpoint: PathBuf,
+}
 
 #[derive(Debug, Clone)]
 pub struct DockerTunnel {
@@ -34,6 +40,51 @@ impl DockerTunnel {
         }
     }
 
+    pub fn start_with_mounts(
+        &self,
+        context: &Context,
+        mounts: &[DockerMount],
+    ) -> Result<(), Error> {
+        let mut args = vec![
+            "run".to_owned(),
+            "--detach".to_owned(),
+            "--rm".to_owned(),
+            "--name".to_owned(),
+            self.container_name.clone(),
+            "--publish".to_owned(),
+            format!(
+                "{}:{}:{}",
+                self.listen_addr.ip(),
+                self.listen_addr.port(),
+                self.container_port
+            ),
+            "--device=/dev/net/tun".to_owned(),
+            "--cap-add=NET_ADMIN".to_owned(),
+        ];
+
+        for mount in mounts {
+            args.push("--mount".to_owned());
+            args.push(format!(
+                "type=bind,source={},destination={},readonly=true",
+                context.apply_path(&mount.host_endpoint).to_string_lossy(),
+                mount.container_endpoint.to_string_lossy(),
+            ));
+        }
+
+        args.push(self.image_name.clone());
+        println!("{}", args.join(" "));
+
+        Self::convert_output(
+            Command::new("docker")
+                .args(&args)
+                .stdin(Stdio::null())
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .spawn()?
+                .wait()?,
+        )
+    }
+
     #[inline]
     fn convert_output(exit_status: ExitStatus) -> Result<(), Error> {
         match exit_status.code() {
@@ -59,32 +110,8 @@ impl Tunnel for DockerTunnel {
     }
 
     #[inline]
-    fn start(&self, _context: &Context) -> Result<(), Error> {
-        Self::convert_output(
-            Command::new("docker")
-                .args(&[
-                    "run",
-                    "--detach",
-                    "--rm",
-                    "--name",
-                    &self.container_name,
-                    "--publish",
-                    &format!(
-                        "{}:{}:{}",
-                        self.listen_addr.ip(),
-                        self.listen_addr.port(),
-                        self.container_port
-                    ),
-                    "--device=/dev/net/tun",
-                    "--cap-add=NET_ADMIN",
-                    &self.image_name,
-                ])
-                .stdin(Stdio::null())
-                .stdout(Stdio::null())
-                .stderr(Stdio::null())
-                .spawn()?
-                .wait()?,
-        )
+    fn start(&self, context: &Context) -> Result<(), Error> {
+        self.start_with_mounts(context, &[])
     }
 
     #[inline]
@@ -105,7 +132,7 @@ impl Tunnel for DockerTunnel {
     #[inline]
     fn is_running(&self, _context: &Context) -> Result<bool, Error> {
         let output = Command::new("docker")
-            .args(&["inspect", "-f", "{{.State.Running}}", &self.image_name])
+            .args(&["inspect", "-f", "{{.State.Running}}", &self.container_name])
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::null())

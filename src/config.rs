@@ -3,7 +3,7 @@ use std::net::{IpAddr, SocketAddr};
 use std::path::{Path, PathBuf};
 
 use crate::error::Error;
-use crate::tunnel::{self, DockerTunnel, SshTunnel, TunnelManager};
+use crate::tunnel::{self, DockerOpenVPNTunnel, DockerTunnel, SshTunnel, TunnelManager};
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Hash)]
 #[serde(tag = "type")]
@@ -29,6 +29,17 @@ enum Tunnel {
         listen_host: String,
         listen_port: u16,
     },
+    #[serde(rename = "docker-openvpn")]
+    DockerOpenVPN {
+        name: String,
+        description: Option<String>,
+        image_name: String,
+        container_name: String,
+        container_port: u16,
+        listen_address: IpAddr,
+        listen_port: u16,
+        config_file: PathBuf,
+    },
 }
 
 impl Into<Box<dyn tunnel::Tunnel>> for Tunnel {
@@ -49,6 +60,24 @@ impl Into<Box<dyn tunnel::Tunnel>> for Tunnel {
                 &container_name,
                 container_port,
                 SocketAddr::new(listen_address, listen_port),
+            )),
+            Tunnel::DockerOpenVPN {
+                name,
+                description,
+                image_name,
+                container_name,
+                container_port,
+                listen_address,
+                listen_port,
+                config_file,
+            } => Box::new(DockerOpenVPNTunnel::new(
+                &name,
+                description,
+                &image_name,
+                &container_name,
+                container_port,
+                SocketAddr::new(listen_address, listen_port),
+                config_file,
             )),
             Tunnel::Ssh {
                 name,
