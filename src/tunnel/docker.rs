@@ -1,4 +1,3 @@
-use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::process::{Command, ExitStatus, Stdio};
 
@@ -17,7 +16,8 @@ pub struct DockerTunnel {
     image_name: String,
     container_name: String,
     container_port: u16,
-    listen_addr: SocketAddr,
+    listen_host: String,
+    listen_port: u16,
 }
 
 impl DockerTunnel {
@@ -27,7 +27,8 @@ impl DockerTunnel {
         image_name: &str,
         container_name: &str,
         container_port: u16,
-        listen_addr: SocketAddr,
+        listen_host: &str,
+        listen_port: u16,
     ) -> DockerTunnel {
         let meta = TunnelMeta { name: name.to_owned(), description };
 
@@ -36,7 +37,8 @@ impl DockerTunnel {
             image_name: image_name.to_owned(),
             container_name: container_name.to_owned(),
             container_port,
-            listen_addr,
+            listen_host: listen_host.to_owned(),
+            listen_port,
         }
     }
 
@@ -45,6 +47,13 @@ impl DockerTunnel {
         context: &Context,
         mounts: &[DockerMount],
     ) -> Result<(), Error> {
+        use std::net::ToSocketAddrs;
+        let listen_addr =
+            match format!("{}:{}", self.listen_host, self.listen_port).to_socket_addrs()?.next() {
+                Some(addr) => addr,
+                None => return Err(Error::DomainNotFound(self.listen_host.clone())),
+            };
+
         let mut args = vec![
             "run".to_owned(),
             "--detach".to_owned(),
@@ -52,12 +61,7 @@ impl DockerTunnel {
             "--name".to_owned(),
             self.container_name.clone(),
             "--publish".to_owned(),
-            format!(
-                "{}:{}:{}",
-                self.listen_addr.ip(),
-                self.listen_addr.port(),
-                self.container_port
-            ),
+            format!("{}:{}", listen_addr, self.container_port),
             "--device=/dev/net/tun".to_owned(),
             "--cap-add=NET_ADMIN".to_owned(),
         ];
@@ -140,32 +144,3 @@ impl Tunnel for DockerTunnel {
         Ok(output.success())
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use std::thread::sleep;
-//     use std::time::Duration;
-
-//     #[test]
-//     fn i() {
-//         let tunnel = DockerTunnel::new(
-//             "fstk-tunnel",
-//             "fstk-tunnel",
-//             "fstk-tunnel",
-//             8118,
-//             "127.0.0.1:3200".parse().unwrap(),
-//         );
-
-//         assert_eq!(tunnel.is_running().unwrap(), false);
-
-//         let _ = tunnel.start();
-//         sleep(Duration::from_secs(10));
-
-//         assert_eq!(tunnel.is_running().unwrap(), true);
-
-//         let _ = tunnel.stop();
-//         sleep(Duration::from_secs(10));
-//         assert_eq!(tunnel.is_running().unwrap(), false);
-//     }
-// }

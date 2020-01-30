@@ -3,6 +3,9 @@ pub enum Error {
     #[fail(display = "io error: {}", _0)]
     StdIo(#[cause] std::io::Error),
 
+    #[fail(display = "domain not found: {}", _0)]
+    DomainNotFound(String),
+
     #[fail(display = "tunnel not found: {}", _0)]
     TunnelNotFound(String),
 

@@ -1,5 +1,4 @@
 use std::collections::BTreeMap;
-use std::net::{IpAddr, SocketAddr};
 use std::path::{Path, PathBuf};
 
 use crate::error::Error;
@@ -15,7 +14,7 @@ enum Tunnel {
         image_name: String,
         container_name: String,
         container_port: u16,
-        listen_address: IpAddr,
+        listen_host: String,
         listen_port: u16,
     },
     #[serde(rename = "ssh")]
@@ -36,7 +35,7 @@ enum Tunnel {
         image_name: String,
         container_name: String,
         container_port: u16,
-        listen_address: IpAddr,
+        listen_host: String,
         listen_port: u16,
         config_file: PathBuf,
     },
@@ -51,7 +50,7 @@ impl Into<Box<dyn tunnel::Tunnel>> for Tunnel {
                 image_name,
                 container_name,
                 container_port,
-                listen_address,
+                listen_host,
                 listen_port,
             } => Box::new(DockerTunnel::new(
                 &name,
@@ -59,7 +58,8 @@ impl Into<Box<dyn tunnel::Tunnel>> for Tunnel {
                 &image_name,
                 &container_name,
                 container_port,
-                SocketAddr::new(listen_address, listen_port),
+                &listen_host,
+                listen_port,
             )),
             Tunnel::DockerOpenVPN {
                 name,
@@ -67,7 +67,7 @@ impl Into<Box<dyn tunnel::Tunnel>> for Tunnel {
                 image_name,
                 container_name,
                 container_port,
-                listen_address,
+                listen_host,
                 listen_port,
                 config_file,
             } => Box::new(DockerOpenVPNTunnel::new(
@@ -76,7 +76,8 @@ impl Into<Box<dyn tunnel::Tunnel>> for Tunnel {
                 &image_name,
                 &container_name,
                 container_port,
-                SocketAddr::new(listen_address, listen_port),
+                &listen_host,
+                listen_port,
                 config_file,
             )),
             Tunnel::Ssh {
@@ -160,7 +161,7 @@ mod test {
                   image_name: docker-tunnel
                   container_name: docker-tunnel
                   container_port: 8118
-                  listen_address: 127.0.0.1
+                  listen_host: 127.0.0.1
                   listen_port: 3128
             ";
         let config = Config::from_str(data).unwrap();
@@ -172,7 +173,7 @@ mod test {
                 image_name: "docker-tunnel".to_owned(),
                 container_name: "docker-tunnel".to_owned(),
                 container_port: 8118,
-                listen_address: "127.0.0.1".parse().unwrap(),
+                listen_host: "127.0.0.1".to_owned(),
                 listen_port: 3128,
             })
         )

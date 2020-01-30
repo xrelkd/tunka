@@ -1,4 +1,3 @@
-use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 
 use crate::context::Context;
@@ -18,7 +17,8 @@ impl DockerOpenVPNTunnel {
         image_name: &str,
         container_name: &str,
         container_port: u16,
-        listen_addr: SocketAddr,
+        listen_host: &str,
+        listen_port: u16,
         config_file: P,
     ) -> DockerOpenVPNTunnel {
         let docker_tunnel = DockerTunnel::new(
@@ -27,7 +27,8 @@ impl DockerOpenVPNTunnel {
             image_name,
             container_name,
             container_port,
-            listen_addr,
+            listen_host,
+            listen_port,
         );
         DockerOpenVPNTunnel { docker_tunnel, config_file: config_file.as_ref().to_owned() }
     }
