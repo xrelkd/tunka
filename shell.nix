@@ -1,7 +1,6 @@
-with import <nixpkgs> {};
+with import <nixpkgs> { };
+
 stdenv.mkDerivation {
-  name = "dev";
-  buildInputs = [ rustup just ];
+  name = "tunka-dev";
+  nativeBuildInputs = [ rustup just ];
 }
-
-
