@@ -11,7 +11,7 @@ use crate::{
 
 #[derive(Debug, StructOpt)]
 pub struct Command {
-    #[structopt(long = "config-file")]
+    #[structopt(long = "config-file", help = "Configuration file path")]
     config_file: Option<PathBuf>,
 
     #[structopt(subcommand)]
@@ -25,18 +25,19 @@ impl Command {
     #[inline]
     pub fn app_name() -> String { Command::clap().get_name().to_owned() }
 
-    pub fn default_config_file() -> PathBuf {
-        let mut p = dirs::config_dir().unwrap();
+    #[inline]
+    pub fn default_config_file() -> Result<PathBuf, Error> {
+        let mut p = dirs::config_dir().ok_or(Error::UserConfigDirectoryNotFound)?;
         p.push(Command::clap().get_name());
         p.push("default.yaml");
-        p
+        Ok(p)
     }
 
     pub fn run(self) -> Result<(), Error> {
         let (context, manager) = if self.subcommand.is_standalone() {
             (None, None)
         } else {
-            let config_file = self.config_file.unwrap_or(Self::default_config_file());
+            let config_file = self.config_file.unwrap_or(Self::default_config_file()?);
             let config = Config::from_file(config_file)?;
             let context = ContextBuilder::new()
                 .control_path_directory(config.control_path_directory())
@@ -51,37 +52,35 @@ impl Command {
 
 #[derive(Debug, StructOpt)]
 pub enum SubCommand {
-    /// Shows current version
-    Version,
-
-    /// Shows shell completion
-    Completions { shell: Shell },
-
-    /// Shows available tunnels
+    #[structopt(aliases = &["ls"], about = "Shows available tunnels")]
     ListTunnels,
 
-    #[structopt(alias = "up")]
-    /// Starts a tunnel
-    Start { tunnel: String },
+    #[structopt(aliases = &["up", "run"], about = "Starts a tunnel")]
+    Start { tunnels: Vec<String> },
 
-    #[structopt(alias = "down")]
-    /// Stops a tunnel
-    Stop { tunnel: String },
+    #[structopt(aliases = &["down"], about = "Stops a tunnel")]
+    Stop { tunnels: Vec<String> },
 
-    /// Restarts a tunnel
-    Restart { tunnel: String },
+    #[structopt(about = "Restarts a tunnel")]
+    Restart { tunnels: Vec<String> },
 
-    /// Check if tunnel is running
-    Running { tunnel: String },
+    #[structopt(about = "Checks whether a tunnel is running")]
+    Running { tunnels: Vec<String> },
 
-    /// Starts all available tunnels
+    #[structopt(about = "Starts all available tunnels")]
     StartAll,
 
-    /// Stops all available tunnels
+    #[structopt(about = "Stops all available tunnels")]
     StopAll,
 
-    /// Restarts all available tunnels
+    #[structopt(about = "Restarts all available tunnels")]
     RestartAll,
+
+    #[structopt(about = "Shows current version")]
+    Version,
+
+    #[structopt(about = "Generates shell completion")]
+    Completions { shell: Shell },
 }
 
 impl SubCommand {
@@ -118,18 +117,29 @@ impl SubCommand {
                 });
                 Ok(())
             }
-            (SubCommand::Start { tunnel }, Some(manager), Some(context)) => {
-                manager.start(&context, &tunnel)
+            (SubCommand::Start { tunnels }, Some(manager), Some(context)) => {
+                for tunnel in &tunnels {
+                    manager.start(&context, tunnel)?;
+                }
+                Ok(())
             }
-            (SubCommand::Stop { tunnel }, Some(manager), Some(context)) => {
-                manager.stop(&context, &tunnel)
+            (SubCommand::Stop { tunnels }, Some(manager), Some(context)) => {
+                for tunnel in &tunnels {
+                    manager.stop(&context, tunnel)?;
+                }
+                Ok(())
             }
-            (SubCommand::Restart { tunnel }, Some(manager), Some(context)) => {
-                manager.restart(&context, &tunnel)
+            (SubCommand::Restart { tunnels }, Some(manager), Some(context)) => {
+                for tunnel in &tunnels {
+                    manager.restart(&context, tunnel)?;
+                }
+                Ok(())
             }
-            (SubCommand::Running { tunnel }, Some(manager), Some(context)) => {
-                let is_running = manager.is_running(&context, &tunnel)?;
-                println!("{}", is_running);
+            (SubCommand::Running { tunnels }, Some(manager), Some(context)) => {
+                for tunnel in &tunnels {
+                    let is_running = manager.is_running(&context, &tunnel)?;
+                    println!("{}", is_running);
+                }
                 Ok(())
             }
             (SubCommand::StartAll, Some(manager), Some(context)) => manager.start_all(&context),

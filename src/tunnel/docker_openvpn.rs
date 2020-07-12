@@ -1,8 +1,10 @@
 use std::path::{Path, PathBuf};
 
-use crate::context::Context;
-use crate::error::Error;
-use crate::tunnel::{docker::DockerMount, DockerTunnel, Tunnel, TunnelMeta, TunnelType};
+use crate::{
+    context::Context,
+    error::Error,
+    tunnel::{docker::DockerMount, DockerTunnel, Tunnel, TunnelMeta, TunnelType},
+};
 
 #[derive(Debug, Clone)]
 pub struct DockerOpenVPNTunnel {
@@ -36,18 +38,12 @@ impl DockerOpenVPNTunnel {
 
 impl Tunnel for DockerOpenVPNTunnel {
     #[inline]
-    fn name(&self) -> &str {
-        self.docker_tunnel.name()
-    }
+    fn name(&self) -> &str { self.docker_tunnel.name() }
 
-    fn meta(&self) -> &TunnelMeta {
-        self.docker_tunnel.meta()
-    }
+    fn meta(&self) -> &TunnelMeta { self.docker_tunnel.meta() }
 
     #[inline]
-    fn tunnel_type(&self) -> TunnelType {
-        TunnelType::DockerOpenVPN
-    }
+    fn tunnel_type(&self) -> TunnelType { TunnelType::DockerOpenVPN }
 
     #[inline]
     fn start(&self, context: &Context) -> Result<(), Error> {
@@ -61,9 +57,7 @@ impl Tunnel for DockerOpenVPNTunnel {
     }
 
     #[inline]
-    fn stop(&self, context: &Context) -> Result<(), Error> {
-        self.docker_tunnel.stop(context)
-    }
+    fn stop(&self, context: &Context) -> Result<(), Error> { self.docker_tunnel.stop(context) }
 
     #[inline]
     fn is_running(&self, context: &Context) -> Result<bool, Error> {

@@ -19,9 +19,7 @@ impl ContextBuilder {
     }
 
     pub fn build(self) -> Result<Context, Error> {
-        use std::env;
-
-        let user_name = env::var("USER").map_err(|_| Error::UserNameNotFound)?;
+        let user_name = std::env::var("USER").map_err(|_| Error::UserNameNotFound)?;
         let home_dir = dirs::home_dir()
             .map(|h| h.to_string_lossy().into())
             .ok_or(Error::HomeDirectoryNotFound)?;

@@ -10,20 +10,23 @@ pub enum Error {
     #[snafu(display("Could not create control path directory {}, error: {}", dir_path.display(), source))]
     CreateControlPathDirectory { dir_path: PathBuf, source: std::io::Error },
 
-    #[snafu(display("domain not found: {}", domain))]
+    #[snafu(display("Domain not found: {}", domain))]
     DomainNotFound { domain: String },
 
-    #[snafu(display("tunnel not found: {}", tunnel))]
+    #[snafu(display("Tunnel not found: {}", tunnel))]
     TunnelNotFound { tunnel: String },
 
-    #[snafu(display("external command error, exit code: {}", code))]
+    #[snafu(display("External command error, exit code: {}", code))]
     ExternalCommand { code: i32 },
 
-    #[snafu(display("user name not found"))]
+    #[snafu(display("User name not found"))]
     UserNameNotFound,
 
-    #[snafu(display("home directory not found"))]
+    #[snafu(display("Home directory not found"))]
     HomeDirectoryNotFound,
+
+    #[snafu(display("User's configuration directory not found"))]
+    UserConfigDirectoryNotFound,
 
     #[snafu(display("Could not resolve socket address {}, error: {}", addr, source))]
     ResolveSocketAddr { addr: String, source: std::io::Error },
