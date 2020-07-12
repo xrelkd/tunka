@@ -2,10 +2,12 @@ use std::path::PathBuf;
 
 use structopt::{clap::Shell, StructOpt};
 
-use crate::config::Config;
-use crate::context::{Context, ContextBuilder};
-use crate::error::Error;
-use crate::tunnel::TunnelManager;
+use crate::{
+    config::Config,
+    context::{Context, ContextBuilder},
+    error::Error,
+    tunnel::TunnelManager,
+};
 
 #[derive(Debug, StructOpt)]
 pub struct Command {
@@ -18,9 +20,10 @@ pub struct Command {
 
 impl Command {
     #[inline]
-    pub fn app_name() -> String {
-        Command::clap().get_name().to_owned()
-    }
+    pub fn new() -> Command { Command::from_args() }
+
+    #[inline]
+    pub fn app_name() -> String { Command::clap().get_name().to_owned() }
 
     pub fn default_config_file() -> PathBuf {
         let mut p = dirs::config_dir().unwrap();
@@ -96,13 +99,13 @@ impl SubCommand {
         manager: Option<TunnelManager>,
     ) -> Result<(), Error> {
         match (self, manager, context) {
-            (SubCommand::Version, _, _) => {
+            (SubCommand::Version, ..) => {
                 Command::clap()
                     .write_version(&mut std::io::stdout())
                     .expect("failed to print version");
                 Ok(())
             }
-            (SubCommand::Completions { shell }, _, _) => {
+            (SubCommand::Completions { shell }, ..) => {
                 let app_name = Command::app_name();
                 Command::clap().gen_completions_to(app_name, shell, &mut std::io::stdout());
                 Ok(())
@@ -132,7 +135,7 @@ impl SubCommand {
             (SubCommand::StartAll, Some(manager), Some(context)) => manager.start_all(&context),
             (SubCommand::StopAll, Some(manager), Some(context)) => manager.stop_all(&context),
             (SubCommand::RestartAll, Some(manager), Some(context)) => manager.restart_all(&context),
-            (_, _, _) => Ok(()),
+            (..) => Ok(()),
         }
     }
 }
