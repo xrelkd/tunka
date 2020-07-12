@@ -1,0 +1,36 @@
+[tasks.format]
+command = "rustup"
+args = ["run", "nightly", "cargo", "fmt"]
+
+[tasks.build]
+command = "cargo"
+args = ["build"]
+dependencies = ["format"]
+
+[tasks.build-release]
+command = "cargo"
+args = ["build", "--release"]
+dependencies = ["format"]
+
+[tasks.test]
+command = "cargo"
+args = ["test"]
+
+[tasks.generate-completions]
+script = [
+'''
+rm -rf completions
+
+mkdir -p completions/{bash-completion/completions,fish/completions,zsh/site-functions}
+
+./target/release/tunka completions bash > "completions/bash-completion/completions/tunka"
+./target/release/tunka completions fish > "completions/fish/completions/tunka.fish"
+./target/release/tunka completions zsh > "completions/zsh/site-functions/_tunka"
+'''
+]
+dependencies = ["build-release"]
+
+[tasks.clean]
+command = "cargo"
+args = ["clean"]
+
