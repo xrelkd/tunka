@@ -2,9 +2,8 @@
 
 echo "Starting OpenVPN client..."
 openvpn --config /config.ovpn \
-    --auth-nocache \
-    --daemon
+  --auth-nocache \
+  --daemon
 
-echo "Starting Brook..."
-brook --version
-exec brook socks5 -l :8118 -i 0.0.0.0
+echo "Starting Tunelo..."
+exec tunelo socks-server --ip 0.0.0.0 --port 8118
