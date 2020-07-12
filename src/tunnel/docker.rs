@@ -1,9 +1,13 @@
-use std::path::PathBuf;
-use std::process::{Command, ExitStatus, Stdio};
+use std::{
+    path::PathBuf,
+    process::{Command, ExitStatus, Stdio},
+};
 
-use crate::context::Context;
-use crate::error::Error;
-use crate::tunnel::{Tunnel, TunnelMeta, TunnelType};
+use crate::{
+    context::Context,
+    error::Error,
+    tunnel::{Tunnel, TunnelMeta, TunnelType},
+};
 
 pub struct DockerMount {
     pub host_endpoint: PathBuf,
@@ -47,12 +51,14 @@ impl DockerTunnel {
         context: &Context,
         mounts: &[DockerMount],
     ) -> Result<(), Error> {
-        use std::net::ToSocketAddrs;
-        let listen_addr =
-            match format!("{}:{}", self.listen_host, self.listen_port).to_socket_addrs()?.next() {
-                Some(addr) => addr,
-                None => return Err(Error::DomainNotFound(self.listen_host.clone())),
-            };
+        let listen_addr = {
+            use std::net::ToSocketAddrs;
+            let addr = format!("{}:{}", self.listen_host, self.listen_port);
+            addr.to_socket_addrs()
+                .map_err(|source| Error::ResolveSocketAddr { addr, source })?
+                .next()
+                .ok_or(Error::DomainNotFound { domain: self.listen_host.clone() })?
+        };
 
         let mut args = vec![
             "run".to_owned(),
@@ -83,8 +89,10 @@ impl DockerTunnel {
                 .stdin(Stdio::null())
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())
-                .spawn()?
-                .wait()?,
+                .spawn()
+                .map_err(|source| Error::SpawnDockerCommand { source })?
+                .wait()
+                .map_err(|source| Error::WaitForDockerProcess { source })?,
         )
     }
 
@@ -92,30 +100,22 @@ impl DockerTunnel {
     fn convert_output(exit_status: ExitStatus) -> Result<(), Error> {
         match exit_status.code() {
             Some(0) | None => Ok(()),
-            Some(code) => Err(Error::ExternalCommand(code)),
+            Some(code) => Err(Error::ExternalCommand { code }),
         }
     }
 }
 
 impl Tunnel for DockerTunnel {
     #[inline]
-    fn name(&self) -> &str {
-        &self.meta.name
-    }
+    fn name(&self) -> &str { &self.meta.name }
 
-    fn meta(&self) -> &TunnelMeta {
-        &self.meta
-    }
+    fn meta(&self) -> &TunnelMeta { &self.meta }
 
     #[inline]
-    fn tunnel_type(&self) -> TunnelType {
-        TunnelType::Docker
-    }
+    fn tunnel_type(&self) -> TunnelType { TunnelType::Docker }
 
     #[inline]
-    fn start(&self, context: &Context) -> Result<(), Error> {
-        self.start_with_mounts(context, &[])
-    }
+    fn start(&self, context: &Context) -> Result<(), Error> { self.start_with_mounts(context, &[]) }
 
     #[inline]
     fn stop(&self, context: &Context) -> Result<(), Error> {
@@ -125,10 +125,14 @@ impl Tunnel for DockerTunnel {
                 .stdin(Stdio::null())
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())
-                .spawn()?
-                .wait()?;
+                .spawn()
+                .map_err(|source| Error::SpawnDockerCommand { source })?
+                .wait()
+                .map_err(|source| Error::WaitForDockerProcess { source })?;
+
             return Self::convert_output(exit_status);
         }
+
         Ok(())
     }
 
@@ -139,8 +143,11 @@ impl Tunnel for DockerTunnel {
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::null())
-            .spawn()?
-            .wait()?;
+            .spawn()
+            .map_err(|source| Error::SpawnDockerCommand { source })?
+            .wait()
+            .map_err(|source| Error::WaitForDockerProcess { source })?;
+
         Ok(output.success())
     }
 }

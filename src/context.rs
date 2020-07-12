@@ -21,15 +21,10 @@ impl ContextBuilder {
     pub fn build(self) -> Result<Context, Error> {
         use std::env;
 
-        let user_name = match env::var("USER") {
-            Ok(u) => u,
-            Err(_) => return Err(Error::UserNameNotFound),
-        };
-
-        let home_dir = match dirs::home_dir() {
-            Some(h) => h.to_string_lossy().into(),
-            None => return Err(Error::HomeDirectoryNotFound),
-        };
+        let user_name = env::var("USER").map_err(|_| Error::UserNameNotFound)?;
+        let home_dir = dirs::home_dir()
+            .map(|h| h.to_string_lossy().into())
+            .ok_or(Error::HomeDirectoryNotFound)?;
 
         let control_path_directory = self.control_path_directory;
         Ok(Context { user_name, home_dir, control_path_directory })

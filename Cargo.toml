@@ -8,9 +8,9 @@ edition = "2018"
 
 [dependencies]
 dirs = "2"
-failure = "0.1"
 log = "0.4"
 serde = { version = "1", features = [ "derive" ] }
 serde_yaml = "0.8"
 simple_logger = "1"
 structopt = "0.3"
+snafu = "0.6"

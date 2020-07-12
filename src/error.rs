@@ -1,35 +1,45 @@
-#[derive(Debug, Fail)]
+use std::path::PathBuf;
+
+use snafu::Snafu;
+
+#[derive(Debug, Snafu)]
 pub enum Error {
-    #[fail(display = "io error: {}", _0)]
-    StdIo(#[cause] std::io::Error),
+    #[snafu(display("Could not read configuration file {}, error: {}", file_path.display(), source))]
+    ReadConfigFile { file_path: PathBuf, source: std::io::Error },
 
-    #[fail(display = "domain not found: {}", _0)]
-    DomainNotFound(String),
+    #[snafu(display("Could not create control path directory {}, error: {}", dir_path.display(), source))]
+    CreateControlPathDirectory { dir_path: PathBuf, source: std::io::Error },
 
-    #[fail(display = "tunnel not found: {}", _0)]
-    TunnelNotFound(String),
+    #[snafu(display("domain not found: {}", domain))]
+    DomainNotFound { domain: String },
 
-    #[fail(display = "external command error, exit code: {}", _0)]
-    ExternalCommand(i32),
+    #[snafu(display("tunnel not found: {}", tunnel))]
+    TunnelNotFound { tunnel: String },
 
-    #[fail(display = "user name not found")]
+    #[snafu(display("external command error, exit code: {}", code))]
+    ExternalCommand { code: i32 },
+
+    #[snafu(display("user name not found"))]
     UserNameNotFound,
 
-    #[fail(display = "home directory not found")]
+    #[snafu(display("home directory not found"))]
     HomeDirectoryNotFound,
 
-    #[fail(display = "failed to parse YAML {}", _0)]
-    SerdeYaml(serde_yaml::Error),
-}
+    #[snafu(display("Could not resolve socket address {}, error: {}", addr, source))]
+    ResolveSocketAddr { addr: String, source: std::io::Error },
 
-impl From<std::io::Error> for Error {
-    fn from(err: std::io::Error) -> Error {
-        Error::StdIo(err)
-    }
-}
+    #[snafu(display("Failed to parse YAML, error: {}", source))]
+    ParseYamlConfig { source: serde_yaml::Error },
 
-impl From<serde_yaml::Error> for Error {
-    fn from(err: serde_yaml::Error) -> Error {
-        Error::SerdeYaml(err)
-    }
+    #[snafu(display("Error occurred while spawning SSH command, error: {}", source))]
+    SpawnSshCommand { source: std::io::Error },
+
+    #[snafu(display("Error occurred while waiting for SSH process, error: {}", source))]
+    WaitForSshProcess { source: std::io::Error },
+
+    #[snafu(display("Error occurred while spawning Docker command, error: {}", source))]
+    SpawnDockerCommand { source: std::io::Error },
+
+    #[snafu(display("Error occurred while waiting for Docker process, error: {}", source))]
+    WaitForDockerProcess { source: std::io::Error },
 }

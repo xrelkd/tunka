@@ -2,9 +2,6 @@
 extern crate serde;
 
 #[macro_use]
-extern crate failure;
-
-#[macro_use]
 extern crate log;
 
 use structopt::StructOpt;

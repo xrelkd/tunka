@@ -1,8 +1,12 @@
-use std::collections::BTreeMap;
-use std::path::{Path, PathBuf};
+use std::{
+    collections::BTreeMap,
+    path::{Path, PathBuf},
+};
 
-use crate::error::Error;
-use crate::tunnel::{self, DockerOpenVPNTunnel, DockerTunnel, SshTunnel, TunnelManager};
+use crate::{
+    error::Error,
+    tunnel::{self, DockerOpenVPNTunnel, DockerTunnel, SshTunnel, TunnelManager},
+};
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Hash)]
 #[serde(tag = "type")]
@@ -112,18 +116,21 @@ pub struct Config {
 impl Config {
     #[inline]
     pub fn from_str(s: &str) -> Result<Config, Error> {
-        Ok(serde_yaml::from_str(&s)?)
+        let config =
+            serde_yaml::from_str(&s).map_err(|source| Error::ParseYamlConfig { source })?;
+        Ok(config)
     }
 
     #[inline]
     pub fn from_file<P: AsRef<Path>>(config_file: P) -> Result<Config, Error> {
-        Self::from_str(&std::fs::read_to_string(config_file)?)
+        let content = std::fs::read_to_string(&config_file).map_err(|source| {
+            Error::ReadConfigFile { source, file_path: config_file.as_ref().to_owned() }
+        })?;
+        Self::from_str(&content)
     }
 
     #[inline]
-    pub fn control_path_directory(&self) -> &Path {
-        &self.control_path_directory
-    }
+    pub fn control_path_directory(&self) -> &Path { &self.control_path_directory }
 
     pub fn into_manager(self) -> TunnelManager {
         let tunnels = self.tunnels.into_iter().fold(BTreeMap::new(), |mut tunnels, tunnel| {

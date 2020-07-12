@@ -1,15 +1,12 @@
 use std::collections::BTreeMap;
 
-use crate::context::Context;
-use crate::error::Error;
+use crate::{context::Context, error::Error};
 
 mod docker;
 mod docker_openvpn;
 mod ssh;
 
-pub use self::docker::DockerTunnel;
-pub use self::docker_openvpn::DockerOpenVPNTunnel;
-pub use self::ssh::SshTunnel;
+pub use self::{docker::DockerTunnel, docker_openvpn::DockerOpenVPNTunnel, ssh::SshTunnel};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq, Hash)]
 pub struct TunnelMeta {
@@ -59,9 +56,7 @@ pub struct TunnelManager {
 
 impl TunnelManager {
     #[inline]
-    pub fn list(&self) -> Vec<String> {
-        self.tunnels.keys().map(ToOwned::to_owned).collect()
-    }
+    pub fn list(&self) -> Vec<String> { self.tunnels.keys().map(ToOwned::to_owned).collect() }
 
     #[inline]
     pub fn metadata_list(&self) -> Vec<TunnelMeta> {
@@ -70,7 +65,9 @@ impl TunnelManager {
 
     #[inline]
     pub fn start(&self, context: &Context, tunnel_name: &str) -> Result<(), Error> {
-        std::fs::create_dir_all(context.control_path_directory())?;
+        let dir_path = context.control_path_directory();
+        std::fs::create_dir_all(&dir_path)
+            .map_err(|source| Error::CreateControlPathDirectory { source, dir_path })?;
 
         let tunnel = self.get_tunnel(tunnel_name)?;
         println!("Start {} {}", tunnel.tunnel_type(), tunnel_name);
@@ -117,7 +114,7 @@ impl TunnelManager {
     pub fn get_tunnel(&self, tunnel_name: &str) -> Result<&Box<dyn Tunnel>, Error> {
         match self.tunnels.get(tunnel_name) {
             Some(tunnel) => Ok(tunnel),
-            None => Err(Error::TunnelNotFound(tunnel_name.to_owned())),
+            None => Err(Error::TunnelNotFound { tunnel: tunnel_name.to_owned() }),
         }
     }
 

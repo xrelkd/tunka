@@ -1,9 +1,13 @@
-use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::{
+    path::{Path, PathBuf},
+    process::{Command, Stdio},
+};
 
-use crate::context::Context;
-use crate::error::Error;
-use crate::tunnel::{Tunnel, TunnelMeta, TunnelType};
+use crate::{
+    context::Context,
+    error::Error,
+    tunnel::{Tunnel, TunnelMeta, TunnelType},
+};
 
 #[derive(Debug, Clone)]
 pub struct SshTunnel {
@@ -59,19 +63,13 @@ impl SshTunnel {
 
 impl Tunnel for SshTunnel {
     #[inline]
-    fn name(&self) -> &str {
-        &self.meta.name
-    }
+    fn name(&self) -> &str { &self.meta.name }
 
     #[inline]
-    fn meta(&self) -> &TunnelMeta {
-        &self.meta
-    }
+    fn meta(&self) -> &TunnelMeta { &self.meta }
 
     #[inline]
-    fn tunnel_type(&self) -> TunnelType {
-        TunnelType::Ssh
-    }
+    fn tunnel_type(&self) -> TunnelType { TunnelType::Ssh }
 
     #[inline]
     fn restart(&self, context: &Context) -> Result<(), Error> {
@@ -106,8 +104,10 @@ impl Tunnel for SshTunnel {
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::null())
-            .spawn()?
-            .wait()?;
+            .spawn()
+            .map_err(|source| Error::SpawnSshCommand { source })?
+            .wait()
+            .map_err(|source| Error::WaitForSshProcess { source })?;
 
         Ok(())
     }
@@ -119,8 +119,10 @@ impl Tunnel for SshTunnel {
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::null())
-            .spawn()?
-            .wait()?;
+            .spawn()
+            .map_err(|source| Error::SpawnSshCommand { source })?
+            .wait()
+            .map_err(|source| Error::WaitForSshProcess { source })?;
 
         Ok(())
     }
@@ -132,8 +134,10 @@ impl Tunnel for SshTunnel {
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::null())
-            .spawn()?
-            .wait()?;
+            .spawn()
+            .map_err(|source| Error::SpawnSshCommand { source })?
+            .wait()
+            .map_err(|source| Error::WaitForSshProcess { source })?;
 
         Ok(output.success())
     }
