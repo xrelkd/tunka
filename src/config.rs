@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     error::Error,
-    tunnel::{self, DockerOpenVPNTunnel, DockerTunnel, SshTunnel, TunnelManager},
+    tunnel::{self, DockerOpenVPNTunnel, DockerTunnel, SshTunnel, TunnelManager, TunnelMeta},
 };
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Hash)]
@@ -56,15 +56,17 @@ impl Into<Box<dyn tunnel::Tunnel>> for Tunnel {
                 container_port,
                 listen_host,
                 listen_port,
-            } => Box::new(DockerTunnel::new(
-                &name,
-                description,
-                &image_name,
-                &container_name,
-                container_port,
-                &listen_host,
-                listen_port,
-            )),
+            } => {
+                let meta = TunnelMeta { name, description };
+                Box::new(DockerTunnel {
+                    meta,
+                    image_name,
+                    container_name,
+                    container_port,
+                    listen_host,
+                    listen_port,
+                })
+            }
             Tunnel::DockerOpenVPN {
                 name,
                 description,
@@ -74,16 +76,18 @@ impl Into<Box<dyn tunnel::Tunnel>> for Tunnel {
                 listen_host,
                 listen_port,
                 config_file,
-            } => Box::new(DockerOpenVPNTunnel::new(
-                &name,
-                description,
-                &image_name,
-                &container_name,
-                container_port,
-                &listen_host,
-                listen_port,
-                config_file,
-            )),
+            } => {
+                let meta = TunnelMeta { name, description };
+                let docker_tunnel = DockerTunnel {
+                    meta,
+                    image_name,
+                    container_name,
+                    container_port,
+                    listen_host,
+                    listen_port,
+                };
+                Box::new(DockerOpenVPNTunnel { docker_tunnel, config_file })
+            }
             Tunnel::Ssh {
                 name,
                 description,
@@ -93,16 +97,18 @@ impl Into<Box<dyn tunnel::Tunnel>> for Tunnel {
                 identify_file,
                 listen_host,
                 listen_port,
-            } => Box::new(SshTunnel::new(
-                &name,
-                description,
-                &remote_host,
-                remote_port,
-                &user_name,
-                identify_file,
-                &listen_host,
-                listen_port,
-            )),
+            } => {
+                let meta = TunnelMeta { name, description };
+                Box::new(SshTunnel {
+                    meta,
+                    remote_host,
+                    remote_port,
+                    user_name,
+                    identify_file,
+                    listen_host,
+                    listen_port,
+                })
+            }
         }
     }
 }

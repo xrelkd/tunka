@@ -112,7 +112,7 @@ impl SubCommand {
             (SubCommand::ListTunnels, Some(manager), _) => {
                 manager.metadata_list().into_iter().for_each(|tunnel| {
                     let name = tunnel.name;
-                    let description = tunnel.description.unwrap_or(String::new());
+                    let description = tunnel.description.unwrap_or_default();
                     println!("{:24}\t{}", name, description);
                 });
                 Ok(())

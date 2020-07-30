@@ -16,36 +16,15 @@ pub struct DockerMount {
 
 #[derive(Debug, Clone)]
 pub struct DockerTunnel {
-    meta: TunnelMeta,
-    image_name: String,
-    container_name: String,
-    container_port: u16,
-    listen_host: String,
-    listen_port: u16,
+    pub meta: TunnelMeta,
+    pub image_name: String,
+    pub container_name: String,
+    pub container_port: u16,
+    pub listen_host: String,
+    pub listen_port: u16,
 }
 
 impl DockerTunnel {
-    pub fn new(
-        name: &str,
-        description: Option<String>,
-        image_name: &str,
-        container_name: &str,
-        container_port: u16,
-        listen_host: &str,
-        listen_port: u16,
-    ) -> DockerTunnel {
-        let meta = TunnelMeta { name: name.to_owned(), description };
-
-        DockerTunnel {
-            meta,
-            image_name: image_name.to_owned(),
-            container_name: container_name.to_owned(),
-            container_port,
-            listen_host: listen_host.to_owned(),
-            listen_port,
-        }
-    }
-
     pub fn start_with_mounts(
         &self,
         context: &Context,
@@ -106,9 +85,6 @@ impl DockerTunnel {
 }
 
 impl Tunnel for DockerTunnel {
-    #[inline]
-    fn name(&self) -> &str { &self.meta.name }
-
     fn meta(&self) -> &TunnelMeta { &self.meta }
 
     #[inline]

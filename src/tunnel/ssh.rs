@@ -1,5 +1,5 @@
 use std::{
-    path::{Path, PathBuf},
+    path::PathBuf,
     process::{Command, Stdio},
 };
 
@@ -11,41 +11,19 @@ use crate::{
 
 #[derive(Debug, Clone)]
 pub struct SshTunnel {
-    meta: TunnelMeta,
-    remote_host: String,
-    remote_port: u16,
-    user_name: String,
-    identify_file: PathBuf,
-    listen_host: String,
-    listen_port: u16,
+    pub meta: TunnelMeta,
+    pub remote_host: String,
+    pub remote_port: u16,
+    pub user_name: String,
+    pub identify_file: PathBuf,
+    pub listen_host: String,
+    pub listen_port: u16,
 }
 
 impl SshTunnel {
-    pub fn new<P: AsRef<Path>>(
-        name: &str,
-        description: Option<String>,
-        remote_host: &str,
-        remote_port: u16,
-        user_name: &str,
-        identify_file: P,
-        listen_host: &str,
-        listen_port: u16,
-    ) -> SshTunnel {
-        let meta = TunnelMeta { name: name.to_owned(), description };
-        SshTunnel {
-            meta,
-            remote_host: remote_host.to_owned(),
-            remote_port,
-            user_name: user_name.to_owned(),
-            identify_file: identify_file.as_ref().into(),
-            listen_host: listen_host.to_owned(),
-            listen_port,
-        }
-    }
-
     #[inline]
     pub fn control_path(&self, context: &Context) -> PathBuf {
-        let mut p = PathBuf::from(context.control_path_directory());
+        let mut p = context.control_path_directory();
         p.push(format!(
             "{}_{}@{}:{}.socket",
             self.name(),
@@ -62,9 +40,6 @@ impl SshTunnel {
 }
 
 impl Tunnel for SshTunnel {
-    #[inline]
-    fn name(&self) -> &str { &self.meta.name }
-
     #[inline]
     fn meta(&self) -> &TunnelMeta { &self.meta }
 

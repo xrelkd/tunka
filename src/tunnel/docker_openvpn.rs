@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use crate::{
     context::Context,
@@ -8,38 +8,12 @@ use crate::{
 
 #[derive(Debug, Clone)]
 pub struct DockerOpenVPNTunnel {
-    docker_tunnel: DockerTunnel,
-    config_file: PathBuf,
-}
-
-impl DockerOpenVPNTunnel {
-    pub fn new<P: AsRef<Path>>(
-        name: &str,
-        description: Option<String>,
-        image_name: &str,
-        container_name: &str,
-        container_port: u16,
-        listen_host: &str,
-        listen_port: u16,
-        config_file: P,
-    ) -> DockerOpenVPNTunnel {
-        let docker_tunnel = DockerTunnel::new(
-            name,
-            description,
-            image_name,
-            container_name,
-            container_port,
-            listen_host,
-            listen_port,
-        );
-        DockerOpenVPNTunnel { docker_tunnel, config_file: config_file.as_ref().to_owned() }
-    }
+    pub docker_tunnel: DockerTunnel,
+    pub config_file: PathBuf,
 }
 
 impl Tunnel for DockerOpenVPNTunnel {
     #[inline]
-    fn name(&self) -> &str { self.docker_tunnel.name() }
-
     fn meta(&self) -> &TunnelMeta { self.docker_tunnel.meta() }
 
     #[inline]

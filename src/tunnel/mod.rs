@@ -32,7 +32,7 @@ impl std::fmt::Display for TunnelType {
 }
 
 pub trait Tunnel {
-    fn name(&self) -> &str;
+    fn name(&self) -> &str { &self.meta().name }
 
     fn meta(&self) -> &TunnelMeta;
 
@@ -69,7 +69,10 @@ impl TunnelManager {
         std::fs::create_dir_all(&dir_path)
             .map_err(|source| Error::CreateControlPathDirectory { source, dir_path })?;
 
-        let tunnel = self.get_tunnel(tunnel_name)?;
+        let tunnel = self
+            .tunnels
+            .get(tunnel_name)
+            .ok_or(Error::TunnelNotFound { tunnel: tunnel_name.to_owned() })?;
         println!("Start {} {}", tunnel.tunnel_type(), tunnel_name);
 
         tunnel.start(context)?;
@@ -79,7 +82,11 @@ impl TunnelManager {
 
     #[inline]
     pub fn stop(&self, context: &Context, tunnel_name: &str) -> Result<(), Error> {
-        let tunnel = self.get_tunnel(tunnel_name)?;
+        let tunnel = self
+            .tunnels
+            .get(tunnel_name)
+            .ok_or(Error::TunnelNotFound { tunnel: tunnel_name.to_owned() })?;
+
         if tunnel.is_running(context)? {
             info!("Stop {} {}", tunnel.tunnel_type(), tunnel_name);
             tunnel.stop(context)?;
@@ -91,7 +98,10 @@ impl TunnelManager {
 
     #[inline]
     pub fn restart(&self, context: &Context, tunnel_name: &str) -> Result<(), Error> {
-        self.get_tunnel(tunnel_name)?.restart(context)
+        self.tunnels
+            .get(tunnel_name)
+            .ok_or(Error::TunnelNotFound { tunnel: tunnel_name.to_owned() })?
+            .restart(context)
     }
 
     #[inline]
@@ -107,15 +117,10 @@ impl TunnelManager {
 
     #[inline]
     pub fn is_running(&self, context: &Context, tunnel_name: &str) -> Result<bool, Error> {
-        self.get_tunnel(tunnel_name)?.is_running(context)
-    }
-
-    #[inline]
-    pub fn get_tunnel(&self, tunnel_name: &str) -> Result<&Box<dyn Tunnel>, Error> {
-        match self.tunnels.get(tunnel_name) {
-            Some(tunnel) => Ok(tunnel),
-            None => Err(Error::TunnelNotFound { tunnel: tunnel_name.to_owned() }),
-        }
+        self.tunnels
+            .get(tunnel_name)
+            .ok_or(Error::TunnelNotFound { tunnel: tunnel_name.to_owned() })?
+            .is_running(context)
     }
 
     #[inline]
