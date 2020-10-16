@@ -5,11 +5,12 @@ completions/
 Dockerfile
 .dockerignore
 docker-compose.yml
-docker
+docker/
 docs
 ci
 
-.git
+.git/
+.github/
 .gitignore
 
 .envrc
