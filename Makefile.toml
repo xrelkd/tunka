@@ -1,3 +1,5 @@
+
+
 [tasks.format]
 command = "rustup"
 args = ["run", "nightly", "cargo", "fmt"]
@@ -15,6 +17,14 @@ dependencies = ["format"]
 [tasks.test]
 command = "cargo"
 args = ["test"]
+
+[tasks.lints]
+script = [
+'''
+touch src/**
+cargo clippy --all
+'''
+]
 
 [tasks.generate-completions]
 script = [
@@ -34,3 +44,19 @@ dependencies = ["build-release"]
 command = "cargo"
 args = ["clean"]
 
+[tasks.build-images]
+dependencies = ["build-docker-openvpn", "build-docker-tor"]
+
+[tasks.build-docker-openvpn]
+script = [
+'''
+docker build --tag tunka-openvpn docker/openvpn
+'''
+]
+
+[tasks.build-docker-tor]
+script = [
+'''
+docker build --tag tunka-tor docker/tor
+'''
+]
