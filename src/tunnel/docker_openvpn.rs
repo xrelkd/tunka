@@ -10,6 +10,7 @@ use crate::{
 pub struct DockerOpenVPNTunnel {
     pub docker_tunnel: DockerTunnel,
     pub config_file: PathBuf,
+    pub auth_file: Option<PathBuf>,
 }
 
 impl Tunnel for DockerOpenVPNTunnel {
@@ -21,13 +22,23 @@ impl Tunnel for DockerOpenVPNTunnel {
 
     #[inline]
     fn start(&self, context: &Context) -> Result<(), Error> {
-        self.docker_tunnel.start_with_mounts(
-            context,
-            &[DockerMount {
+        let mounts = {
+            let mut m = vec![DockerMount {
                 host_endpoint: self.config_file.clone(),
                 container_endpoint: PathBuf::from("/config.ovpn"),
-            }],
-        )
+            }];
+
+            if let Some(auth_file) = &self.auth_file {
+                m.push(DockerMount {
+                    host_endpoint: auth_file.clone(),
+                    container_endpoint: PathBuf::from("/auth.txt"),
+                })
+            }
+
+            m
+        };
+
+        self.docker_tunnel.start_with_mounts(context, &mounts)
     }
 
     #[inline]

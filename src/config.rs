@@ -42,6 +42,7 @@ enum Tunnel {
         listen_host: String,
         listen_port: u16,
         config_file: PathBuf,
+        auth_file: Option<PathBuf>,
     },
 }
 
@@ -76,6 +77,7 @@ impl Into<Box<dyn tunnel::Tunnel>> for Tunnel {
                 listen_host,
                 listen_port,
                 config_file,
+                auth_file,
             } => {
                 let meta = TunnelMeta { name, description };
                 let docker_tunnel = DockerTunnel {
@@ -86,7 +88,7 @@ impl Into<Box<dyn tunnel::Tunnel>> for Tunnel {
                     listen_host,
                     listen_port,
                 };
-                Box::new(DockerOpenVPNTunnel { docker_tunnel, config_file })
+                Box::new(DockerOpenVPNTunnel { docker_tunnel, config_file, auth_file })
             }
             Tunnel::Ssh {
                 name,
