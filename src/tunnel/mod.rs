@@ -125,16 +125,16 @@ impl TunnelManager {
 
     #[inline]
     pub fn start_all(&self, context: &Context) -> Result<(), Error> {
-        self.list().iter().map(|t| self.start(context, t)).collect()
+        self.list().iter().try_for_each(|t| self.start(context, t))
     }
 
     #[inline]
     pub fn stop_all(&self, context: &Context) -> Result<(), Error> {
-        self.list().iter().map(|t| self.stop(context, t)).collect()
+        self.list().iter().try_for_each(|t| self.stop(context, t))
     }
 
     #[inline]
     pub fn restart_all(&self, context: &Context) -> Result<(), Error> {
-        self.list().iter().map(|t| self.restart(context, t)).collect()
+        self.list().iter().try_for_each(|t| self.restart(context, t))
     }
 }

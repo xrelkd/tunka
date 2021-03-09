@@ -1,6 +1,6 @@
 [package]
 name = "tunka"
-version = "0.2.3"
+version = "0.3.0"
 authors = ["xrelkd 46590321+xrelkd@users.noreply.github.com"]
 edition = "2018"
 
