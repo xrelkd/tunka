@@ -2,13 +2,16 @@
 name = "tunka"
 version = "0.3.0"
 authors = ["xrelkd 46590321+xrelkd@users.noreply.github.com"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
-dirs = "2"
-log = "0.4"
-serde = { version = "1", features = [ "derive" ] }
+serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.8"
-simple_logger = "1"
+
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+clap = { version = "4", features = ["derive"] }
+clap_complete = "4"
+dirs = "2"
 snafu = "0.6"
-structopt = "0.3"

@@ -3,12 +3,14 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use serde::{Deserialize, Serialize};
+
 use crate::{
     error::Error,
     tunnel::{self, DockerOpenVPNTunnel, DockerTunnel, SshTunnel, TunnelManager, TunnelMeta},
 };
 
-#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Hash)]
+#[derive(Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 #[serde(tag = "type")]
 enum Tunnel {
     #[serde(rename = "docker")]
@@ -21,6 +23,7 @@ enum Tunnel {
         listen_host: String,
         listen_port: u16,
     },
+
     #[serde(rename = "ssh")]
     Ssh {
         name: String,
@@ -32,6 +35,7 @@ enum Tunnel {
         listen_host: String,
         listen_port: u16,
     },
+
     #[serde(rename = "docker-openvpn")]
     DockerOpenVPN {
         name: String,

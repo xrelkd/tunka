@@ -1,4 +1,6 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, fmt};
+
+use serde::{Deserialize, Serialize};
 
 use crate::{context::Context, error::Error};
 
@@ -8,21 +10,21 @@ mod ssh;
 
 pub use self::{docker::DockerTunnel, docker_openvpn::DockerOpenVPNTunnel, ssh::SshTunnel};
 
-#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub struct TunnelMeta {
     pub name: String,
     pub description: Option<String>,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Copy, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub enum TunnelType {
     Ssh,
     Docker,
     DockerOpenVPN,
 }
 
-impl std::fmt::Display for TunnelType {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+impl fmt::Display for TunnelType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             TunnelType::Ssh => write!(f, "SSH tunnel"),
             TunnelType::Docker => write!(f, "Docker Tunnel"),
@@ -73,7 +75,7 @@ impl TunnelManager {
             .tunnels
             .get(tunnel_name)
             .ok_or(Error::TunnelNotFound { tunnel: tunnel_name.to_owned() })?;
-        println!("Start {} {}", tunnel.tunnel_type(), tunnel_name);
+        println!("Start {} {tunnel_name}", tunnel.tunnel_type());
 
         tunnel.start(context)?;
         self.log_running_status(context, tunnel_name)?;
@@ -88,7 +90,7 @@ impl TunnelManager {
             .ok_or(Error::TunnelNotFound { tunnel: tunnel_name.to_owned() })?;
 
         if tunnel.is_running(context)? {
-            info!("Stop {} {}", tunnel.tunnel_type(), tunnel_name);
+            tracing::info!("Stop {} {tunnel_name}", tunnel.tunnel_type());
             tunnel.stop(context)?;
         }
 
@@ -107,10 +109,10 @@ impl TunnelManager {
     #[inline]
     pub fn log_running_status(&self, context: &Context, tunnel_name: &str) -> Result<bool, Error> {
         if self.is_running(context, tunnel_name)? {
-            info!("{} is running", tunnel_name);
+            tracing::info!("{tunnel_name} is running");
             Ok(true)
         } else {
-            info!("{} is not running", tunnel_name);
+            tracing::info!("{tunnel_name} is not running");
             Ok(false)
         }
     }

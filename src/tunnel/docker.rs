@@ -14,7 +14,7 @@ pub struct DockerMount {
     pub container_endpoint: PathBuf,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct DockerTunnel {
     pub meta: TunnelMeta,
     pub image_name: String,
@@ -46,7 +46,7 @@ impl DockerTunnel {
             "--name".to_owned(),
             self.container_name.clone(),
             "--publish".to_owned(),
-            format!("{}:{}", listen_addr, self.container_port),
+            format!("{listen_addr}:{}", self.container_port),
             "--device=/dev/net/tun".to_owned(),
             "--cap-add=NET_ADMIN".to_owned(),
         ];
