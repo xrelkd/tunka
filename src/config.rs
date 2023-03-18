@@ -50,9 +50,9 @@ enum Tunnel {
     },
 }
 
-impl Into<Box<dyn tunnel::Tunnel>> for Tunnel {
-    fn into(self) -> Box<dyn tunnel::Tunnel> {
-        match self {
+impl From<Tunnel> for Box<dyn tunnel::Tunnel> {
+    fn from(val: Tunnel) -> Self {
+        match val {
             Tunnel::Docker {
                 name,
                 description,
@@ -128,8 +128,7 @@ pub struct Config {
 impl Config {
     #[inline]
     pub fn from_str(s: &str) -> Result<Config, Error> {
-        let config =
-            serde_yaml::from_str(&s).map_err(|source| Error::ParseYamlConfig { source })?;
+        let config = serde_yaml::from_str(s).map_err(|source| Error::ParseYamlConfig { source })?;
         Ok(config)
     }
 
@@ -167,7 +166,7 @@ mod test {
             tunnels: []
             ";
         let config = Config::from_str(data).unwrap();
-        assert_eq!(config.tunnels.is_empty(), true);
+        assert!(config.tunnels.is_empty());
     }
 
     #[test]

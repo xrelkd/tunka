@@ -97,7 +97,7 @@ impl Tunnel for DockerTunnel {
     fn stop(&self, context: &Context) -> Result<(), Error> {
         if self.is_running(context)? {
             let exit_status = Command::new("docker")
-                .args(&["stop", &self.container_name])
+                .args(["stop", &self.container_name])
                 .stdin(Stdio::null())
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())
@@ -115,7 +115,7 @@ impl Tunnel for DockerTunnel {
     #[inline]
     fn is_running(&self, _context: &Context) -> Result<bool, Error> {
         let output = Command::new("docker")
-            .args(&["inspect", "-f", "{{.State.Running}}", &self.container_name])
+            .args(["inspect", "-f", "{{.State.Running}}", &self.container_name])
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::null())

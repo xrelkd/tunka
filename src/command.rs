@@ -141,7 +141,7 @@ impl Command {
             }
             (Command::Running { tunnels }, Some(manager), Some(context)) => {
                 for tunnel in &tunnels {
-                    let is_running = manager.is_running(&context, &tunnel)?;
+                    let is_running = manager.is_running(&context, tunnel)?;
                     println!("{is_running}");
                 }
                 Ok(())

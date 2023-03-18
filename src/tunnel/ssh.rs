@@ -57,9 +57,9 @@ impl Tunnel for SshTunnel {
         }
 
         Command::new("ssh")
-            .args(&[
+            .args([
                 "-o",
-                &self.control_path_option(&context),
+                &self.control_path_option(context),
                 "-o",
                 "ControlMaster=auto",
                 "-f",
@@ -88,7 +88,7 @@ impl Tunnel for SshTunnel {
     #[inline]
     fn stop(&self, context: &Context) -> Result<(), Error> {
         Command::new("ssh")
-            .args(&["-O", "exit", "-o", &self.control_path_option(&context), &self.remote_host])
+            .args(["-O", "exit", "-o", &self.control_path_option(context), &self.remote_host])
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::null())
@@ -103,7 +103,7 @@ impl Tunnel for SshTunnel {
     #[inline]
     fn is_running(&self, context: &Context) -> Result<bool, Error> {
         let output = Command::new("ssh")
-            .args(&["-O", "check", "-o", &self.control_path_option(&context), &self.remote_host])
+            .args(["-O", "check", "-o", &self.control_path_option(context), &self.remote_host])
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::null())
