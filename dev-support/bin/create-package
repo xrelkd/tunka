@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+set -euxo pipefail
+
+PACKAGE_NAME="tunka"
+BINARY_NAME="tunka"
+VERSION=${REF#"refs/tags/"}
+DIST=$(pwd)/dist
+
+echo "Packaging $PACKAGE_NAME $VERSION for $TARGET..."
+
+echo "Building $BINARY_NAME..."
+RUSTFLAGS="--deny warnings --codegen target-feature=+crt-static $TARGET_RUSTFLAGS" \
+    cargo build --bin "$BINARY_NAME" --target "$TARGET" --release
+EXECUTABLE="target/$TARGET/release/$BINARY_NAME"
+
+echo "Copying release files..."
+mkdir dist
+cp \
+    "$EXECUTABLE" \
+    LICENSE \
+    README.md \
+    "$DIST"
+
+cd "$DIST"
+echo "Creating release archive..."
+case "$OS" in
+    ubuntu-latest | macos-latest)
+        ARCHIVE="$DIST/$PACKAGE_NAME-$VERSION-$TARGET.tar.gz"
+        tar czf "$ARCHIVE" *
+        echo "::set-output name=archive::$ARCHIVE"
+        ;;
+esac

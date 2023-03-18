@@ -1,6 +1,6 @@
-use std::path::PathBuf;
+use std::{io::Write, iter::FromIterator, path::PathBuf};
 
-use structopt::{clap::Shell, StructOpt};
+use clap::{CommandFactory, Parser};
 
 use crate::{
     config::Config,
@@ -9,32 +9,38 @@ use crate::{
     tunnel::TunnelManager,
 };
 
-#[derive(Debug, StructOpt)]
-pub struct Command {
-    #[structopt(long = "config-file", help = "Configuration file path")]
+#[derive(Debug, Parser)]
+#[clap(about, author, version)]
+pub struct Cli {
+    #[arg(long = "config-file", help = "Configuration file path")]
     config_file: Option<PathBuf>,
 
-    #[structopt(subcommand)]
-    subcommand: SubCommand,
+    #[command(subcommand)]
+    command: Command,
 }
 
-impl Command {
-    #[inline]
-    pub fn new() -> Command { Command::from_args() }
+impl Default for Cli {
+    fn default() -> Self { Cli::parse() }
+}
 
+impl Cli {
     #[inline]
-    pub fn app_name() -> String { Command::clap().get_name().to_owned() }
+    pub fn app_name() -> String {
+        let app = Self::command();
+        app.get_name().to_string()
+    }
 
     #[inline]
     pub fn default_config_file() -> Result<PathBuf, Error> {
-        let mut p = dirs::config_dir().ok_or(Error::UserConfigDirectoryNotFound)?;
-        p.push(Command::clap().get_name());
-        p.push("default.yaml");
-        Ok(p)
+        Ok(PathBuf::from_iter([
+            dirs::config_dir().ok_or(Error::UserConfigDirectoryNotFound)?,
+            PathBuf::from(Self::app_name()),
+            PathBuf::from("default.yaml"),
+        ]))
     }
 
     pub fn run(self) -> Result<(), Error> {
-        let (context, manager) = if self.subcommand.is_standalone() {
+        let (context, manager) = if self.command.is_standalone() {
             (None, None)
         } else {
             let config_file = self.config_file.unwrap_or(Self::default_config_file()?);
@@ -46,50 +52,47 @@ impl Command {
             (Some(context), Some(manager))
         };
 
-        self.subcommand.run(context, manager)
+        self.command.run(context, manager)
     }
 }
 
-#[derive(Debug, StructOpt)]
-pub enum SubCommand {
-    #[structopt(aliases = &["ls"], about = "Shows available tunnels")]
+#[derive(Debug, Parser)]
+pub enum Command {
+    #[command(aliases = &["ls"], about = "Shows available tunnels")]
     ListTunnels,
 
-    #[structopt(aliases = &["up", "run"], about = "Starts a tunnel")]
+    #[command(aliases = &["up", "run"], about = "Starts a tunnel")]
     Start { tunnels: Vec<String> },
 
-    #[structopt(aliases = &["down"], about = "Stops a tunnel")]
+    #[command(aliases = &["down"], about = "Stops a tunnel")]
     Stop { tunnels: Vec<String> },
 
-    #[structopt(about = "Restarts a tunnel")]
+    #[command(about = "Restarts a tunnel")]
     Restart { tunnels: Vec<String> },
 
-    #[structopt(about = "Checks whether a tunnel is running")]
+    #[command(about = "Checks whether a tunnel is running")]
     Running { tunnels: Vec<String> },
 
-    #[structopt(about = "Starts all available tunnels")]
+    #[command(about = "Starts all available tunnels")]
     StartAll,
 
-    #[structopt(about = "Stops all available tunnels")]
+    #[command(about = "Stops all available tunnels")]
     StopAll,
 
-    #[structopt(about = "Restarts all available tunnels")]
+    #[command(about = "Restarts all available tunnels")]
     RestartAll,
 
-    #[structopt(about = "Shows current version")]
+    #[command(about = "Shows current version")]
     Version,
 
-    #[structopt(about = "Generates shell completion")]
-    Completions { shell: Shell },
+    #[command(about = "Generates shell completion")]
+    Completions { shell: clap_complete::Shell },
 }
 
-impl SubCommand {
+impl Command {
     #[inline]
     pub fn is_standalone(&self) -> bool {
-        match self {
-            SubCommand::Version | SubCommand::Completions { .. } => true,
-            _ => false,
-        }
+        matches!(self, Command::Version | Command::Completions { .. })
     }
 
     pub fn run(
@@ -98,54 +101,55 @@ impl SubCommand {
         manager: Option<TunnelManager>,
     ) -> Result<(), Error> {
         match (self, manager, context) {
-            (SubCommand::Version, ..) => {
-                Command::clap()
-                    .write_version(&mut std::io::stdout())
-                    .expect("failed to print version");
+            (Command::Version, ..) => {
+                let mut stdout = std::io::stdout();
+                stdout
+                    .write_all(Cli::command().render_long_version().as_bytes())
+                    .expect("failed to write to stdout");
                 Ok(())
             }
-            (SubCommand::Completions { shell }, ..) => {
-                let app_name = Command::app_name();
-                Command::clap().gen_completions_to(app_name, shell, &mut std::io::stdout());
+            (Command::Completions { shell }, ..) => {
+                let mut app = Cli::command();
+                clap_complete::generate(shell, &mut app, Cli::app_name(), &mut std::io::stdout());
                 Ok(())
             }
-            (SubCommand::ListTunnels, Some(manager), _) => {
+            (Command::ListTunnels, Some(manager), _) => {
                 manager.metadata_list().into_iter().for_each(|tunnel| {
                     let name = tunnel.name;
                     let description = tunnel.description.unwrap_or_default();
-                    println!("{:24}\t{}", name, description);
+                    println!("{name:24}\t{description}");
                 });
                 Ok(())
             }
-            (SubCommand::Start { tunnels }, Some(manager), Some(context)) => {
+            (Command::Start { tunnels }, Some(manager), Some(context)) => {
                 for tunnel in &tunnels {
                     manager.start(&context, tunnel)?;
                 }
                 Ok(())
             }
-            (SubCommand::Stop { tunnels }, Some(manager), Some(context)) => {
+            (Command::Stop { tunnels }, Some(manager), Some(context)) => {
                 for tunnel in &tunnels {
                     manager.stop(&context, tunnel)?;
                 }
                 Ok(())
             }
-            (SubCommand::Restart { tunnels }, Some(manager), Some(context)) => {
+            (Command::Restart { tunnels }, Some(manager), Some(context)) => {
                 for tunnel in &tunnels {
                     manager.restart(&context, tunnel)?;
                 }
                 Ok(())
             }
-            (SubCommand::Running { tunnels }, Some(manager), Some(context)) => {
+            (Command::Running { tunnels }, Some(manager), Some(context)) => {
                 for tunnel in &tunnels {
-                    let is_running = manager.is_running(&context, &tunnel)?;
-                    println!("{}", is_running);
+                    let is_running = manager.is_running(&context, tunnel)?;
+                    println!("{is_running}");
                 }
                 Ok(())
             }
-            (SubCommand::StartAll, Some(manager), Some(context)) => manager.start_all(&context),
-            (SubCommand::StopAll, Some(manager), Some(context)) => manager.stop_all(&context),
-            (SubCommand::RestartAll, Some(manager), Some(context)) => manager.restart_all(&context),
-            (..) => Ok(()),
+            (Command::StartAll, Some(manager), Some(context)) => manager.start_all(&context),
+            (Command::StopAll, Some(manager), Some(context)) => manager.stop_all(&context),
+            (Command::RestartAll, Some(manager), Some(context)) => manager.restart_all(&context),
+            _ => Ok(()),
         }
     }
 }

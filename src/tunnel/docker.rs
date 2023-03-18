@@ -14,7 +14,7 @@ pub struct DockerMount {
     pub container_endpoint: PathBuf,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct DockerTunnel {
     pub meta: TunnelMeta,
     pub image_name: String,
@@ -46,7 +46,7 @@ impl DockerTunnel {
             "--name".to_owned(),
             self.container_name.clone(),
             "--publish".to_owned(),
-            format!("{}:{}", listen_addr, self.container_port),
+            format!("{listen_addr}:{}", self.container_port),
             "--device=/dev/net/tun".to_owned(),
             "--cap-add=NET_ADMIN".to_owned(),
         ];
@@ -97,7 +97,7 @@ impl Tunnel for DockerTunnel {
     fn stop(&self, context: &Context) -> Result<(), Error> {
         if self.is_running(context)? {
             let exit_status = Command::new("docker")
-                .args(&["stop", &self.container_name])
+                .args(["stop", &self.container_name])
                 .stdin(Stdio::null())
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())
@@ -115,7 +115,7 @@ impl Tunnel for DockerTunnel {
     #[inline]
     fn is_running(&self, _context: &Context) -> Result<bool, Error> {
         let output = Command::new("docker")
-            .args(&["inspect", "-f", "{{.State.Running}}", &self.container_name])
+            .args(["inspect", "-f", "{{.State.Running}}", &self.container_name])
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::null())

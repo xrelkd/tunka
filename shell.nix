@@ -1,9 +1,23 @@
-with import <nixpkgs> { };
+{ pkgs ? import <nixpkgs>, ... }:
 
-stdenv.mkDerivation {
-  name = "tunka-dev";
+pkgs.mkShell rec {
+  name = "dev-shell";
 
-  RUST_BACKTRACE = 1;
+  buildInputs = with pkgs; [
+    rustup
 
-  nativeBuildInputs = [ rustup just ];
+    tokei
+
+    treefmt
+
+    jq
+    nixpkgs-fmt
+    shfmt
+    nodePackages.prettier
+    shellcheck
+  ];
+
+  shellHook = ''
+    export NIX_PATH="nixpkgs=${pkgs.path}"
+  '';
 }

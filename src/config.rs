@@ -3,12 +3,14 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use serde::{Deserialize, Serialize};
+
 use crate::{
     error::Error,
     tunnel::{self, DockerOpenVPNTunnel, DockerTunnel, SshTunnel, TunnelManager, TunnelMeta},
 };
 
-#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Hash)]
+#[derive(Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 #[serde(tag = "type")]
 enum Tunnel {
     #[serde(rename = "docker")]
@@ -21,6 +23,7 @@ enum Tunnel {
         listen_host: String,
         listen_port: u16,
     },
+
     #[serde(rename = "ssh")]
     Ssh {
         name: String,
@@ -32,6 +35,7 @@ enum Tunnel {
         listen_host: String,
         listen_port: u16,
     },
+
     #[serde(rename = "docker-openvpn")]
     DockerOpenVPN {
         name: String,
@@ -42,12 +46,13 @@ enum Tunnel {
         listen_host: String,
         listen_port: u16,
         config_file: PathBuf,
+        auth_file: Option<PathBuf>,
     },
 }
 
-impl Into<Box<dyn tunnel::Tunnel>> for Tunnel {
-    fn into(self) -> Box<dyn tunnel::Tunnel> {
-        match self {
+impl From<Tunnel> for Box<dyn tunnel::Tunnel> {
+    fn from(val: Tunnel) -> Self {
+        match val {
             Tunnel::Docker {
                 name,
                 description,
@@ -76,6 +81,7 @@ impl Into<Box<dyn tunnel::Tunnel>> for Tunnel {
                 listen_host,
                 listen_port,
                 config_file,
+                auth_file,
             } => {
                 let meta = TunnelMeta { name, description };
                 let docker_tunnel = DockerTunnel {
@@ -86,7 +92,7 @@ impl Into<Box<dyn tunnel::Tunnel>> for Tunnel {
                     listen_host,
                     listen_port,
                 };
-                Box::new(DockerOpenVPNTunnel { docker_tunnel, config_file })
+                Box::new(DockerOpenVPNTunnel { docker_tunnel, config_file, auth_file })
             }
             Tunnel::Ssh {
                 name,
@@ -122,8 +128,7 @@ pub struct Config {
 impl Config {
     #[inline]
     pub fn from_str(s: &str) -> Result<Config, Error> {
-        let config =
-            serde_yaml::from_str(&s).map_err(|source| Error::ParseYamlConfig { source })?;
+        let config = serde_yaml::from_str(s).map_err(|source| Error::ParseYamlConfig { source })?;
         Ok(config)
     }
 
@@ -161,7 +166,7 @@ mod test {
             tunnels: []
             ";
         let config = Config::from_str(data).unwrap();
-        assert_eq!(config.tunnels.is_empty(), true);
+        assert!(config.tunnels.is_empty());
     }
 
     #[test]

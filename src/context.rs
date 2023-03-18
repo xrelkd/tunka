@@ -8,8 +8,8 @@ pub struct ContextBuilder {
 
 impl ContextBuilder {
     pub fn new() -> ContextBuilder {
-        use crate::command::Command;
-        let control_path_directory = PathBuf::from(format!("/tmp/{}", Command::app_name()));
+        use crate::command::Cli;
+        let control_path_directory = PathBuf::from(format!("/tmp/{}", Cli::app_name()));
         ContextBuilder { control_path_directory }
     }
 

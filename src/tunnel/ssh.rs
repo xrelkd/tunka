@@ -9,7 +9,7 @@ use crate::{
     tunnel::{Tunnel, TunnelMeta, TunnelType},
 };
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct SshTunnel {
     pub meta: TunnelMeta,
     pub remote_host: String,
@@ -23,19 +23,17 @@ pub struct SshTunnel {
 impl SshTunnel {
     #[inline]
     pub fn control_path(&self, context: &Context) -> PathBuf {
-        let mut p = context.control_path_directory();
-        p.push(format!(
-            "{}_{}@{}:{}.socket",
-            self.name(),
-            self.user_name,
-            self.remote_host,
-            self.remote_port
-        ));
-        p
+        let mut path = context.control_path_directory();
+        path.push({
+            let tunnel_name = self.name();
+            let Self { user_name, remote_host, remote_port, .. } = self;
+            format!("{tunnel_name}_{user_name}@{remote_host}:{remote_port}.socket")
+        });
+        path
     }
 
     pub fn control_path_option(&self, context: &Context) -> String {
-        format!("ControlPath={}", self.control_path(context).to_string_lossy())
+        format!("ControlPath={path}", path = self.control_path(context).to_string_lossy())
     }
 }
 
@@ -59,9 +57,9 @@ impl Tunnel for SshTunnel {
         }
 
         Command::new("ssh")
-            .args(&[
+            .args([
                 "-o",
-                &self.control_path_option(&context),
+                &self.control_path_option(context),
                 "-o",
                 "ControlMaster=auto",
                 "-f",
@@ -90,7 +88,7 @@ impl Tunnel for SshTunnel {
     #[inline]
     fn stop(&self, context: &Context) -> Result<(), Error> {
         Command::new("ssh")
-            .args(&["-O", "exit", "-o", &self.control_path_option(&context), &self.remote_host])
+            .args(["-O", "exit", "-o", &self.control_path_option(context), &self.remote_host])
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::null())
@@ -105,7 +103,7 @@ impl Tunnel for SshTunnel {
     #[inline]
     fn is_running(&self, context: &Context) -> Result<bool, Error> {
         let output = Command::new("ssh")
-            .args(&["-O", "check", "-o", &self.control_path_option(&context), &self.remote_host])
+            .args(["-O", "check", "-o", &self.control_path_option(context), &self.remote_host])
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::null())
