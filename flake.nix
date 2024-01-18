@@ -17,7 +17,7 @@
   outputs = { self, nixpkgs, flake-utils, fenix, crane }:
     let
       name = "tunka";
-      version = "0.4.0";
+      version = "0.4.1";
     in
     (flake-utils.lib.eachDefaultSystem
       (system:
