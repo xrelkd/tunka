@@ -1,14 +1,14 @@
-use std::{collections::BTreeMap, fmt};
-
-use serde::{Deserialize, Serialize};
-
-use crate::{context::Context, error::Error};
-
 mod docker;
 mod docker_openvpn;
 mod ssh;
 
+use std::{collections::BTreeMap, fmt};
+
+use serde::{Deserialize, Serialize};
+use snafu::ResultExt;
+
 pub use self::{docker::DockerTunnel, docker_openvpn::DockerOpenVPNTunnel, ssh::SshTunnel};
+use crate::{context::Context, error, error::Error};
 
 #[derive(Debug, Clone, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub struct TunnelMeta {
@@ -24,11 +24,11 @@ pub enum TunnelType {
 }
 
 impl fmt::Display for TunnelType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            TunnelType::Ssh => write!(f, "SSH tunnel"),
-            TunnelType::Docker => write!(f, "Docker Tunnel"),
-            TunnelType::DockerOpenVPN => write!(f, "Docker OpenVPN Tunnel"),
+            Self::Ssh => write!(f, "SSH tunnel"),
+            Self::Docker => write!(f, "Docker Tunnel"),
+            Self::DockerOpenVPN => write!(f, "Docker OpenVPN Tunnel"),
         }
     }
 }
@@ -69,7 +69,7 @@ impl TunnelManager {
     pub fn start(&self, context: &Context, tunnel_name: &str) -> Result<(), Error> {
         let dir_path = context.control_path_directory();
         std::fs::create_dir_all(&dir_path)
-            .map_err(|source| Error::CreateControlPathDirectory { source, dir_path })?;
+            .with_context(|_| error::CreateControlPathDirectorySnafu { dir_path })?;
 
         let tunnel = self
             .tunnels
@@ -78,7 +78,7 @@ impl TunnelManager {
         println!("Start {} {tunnel_name}", tunnel.tunnel_type());
 
         tunnel.start(context)?;
-        self.log_running_status(context, tunnel_name)?;
+        let _ = self.log_running_status(context, tunnel_name)?;
         Ok(())
     }
 
@@ -94,7 +94,7 @@ impl TunnelManager {
             tunnel.stop(context)?;
         }
 
-        self.log_running_status(context, tunnel_name)?;
+        let _ = self.log_running_status(context, tunnel_name)?;
         Ok(())
     }
 

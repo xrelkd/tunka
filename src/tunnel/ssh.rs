@@ -3,8 +3,11 @@ use std::{
     process::{Command, Stdio},
 };
 
+use snafu::ResultExt;
+
 use crate::{
     context::Context,
+    error,
     error::Error,
     tunnel::{Tunnel, TunnelMeta, TunnelType},
 };
@@ -23,13 +26,14 @@ pub struct SshTunnel {
 impl SshTunnel {
     #[inline]
     pub fn control_path(&self, context: &Context) -> PathBuf {
-        let mut path = context.control_path_directory();
-        path.push({
-            let tunnel_name = self.name();
-            let Self { user_name, remote_host, remote_port, .. } = self;
-            format!("{tunnel_name}_{user_name}@{remote_host}:{remote_port}.socket")
-        });
-        path
+        PathBuf::from_iter([
+            context.control_path_directory(),
+            PathBuf::from({
+                let tunnel_name = self.name();
+                let Self { user_name, remote_host, remote_port, .. } = self;
+                format!("{tunnel_name}_{user_name}@{remote_host}:{remote_port}.socket")
+            }),
+        ])
     }
 
     pub fn control_path_option(&self, context: &Context) -> String {
@@ -46,7 +50,7 @@ impl Tunnel for SshTunnel {
 
     #[inline]
     fn restart(&self, context: &Context) -> Result<(), Error> {
-        let _ = self.stop(context);
+        let _unused = self.stop(context);
         self.start(context)
     }
 
@@ -56,7 +60,7 @@ impl Tunnel for SshTunnel {
             return Ok(());
         }
 
-        Command::new("ssh")
+        let _result = Command::new("ssh")
             .args([
                 "-o",
                 &self.control_path_option(context),
@@ -78,24 +82,24 @@ impl Tunnel for SshTunnel {
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .spawn()
-            .map_err(|source| Error::SpawnSshCommand { source })?
+            .with_context(|_| error::SpawnSshCommandSnafu)?
             .wait()
-            .map_err(|source| Error::WaitForSshProcess { source })?;
+            .with_context(|_| error::WaitForSshProcessSnafu)?;
 
         Ok(())
     }
 
     #[inline]
     fn stop(&self, context: &Context) -> Result<(), Error> {
-        Command::new("ssh")
+        let _result = Command::new("ssh")
             .args(["-O", "exit", "-o", &self.control_path_option(context), &self.remote_host])
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .spawn()
-            .map_err(|source| Error::SpawnSshCommand { source })?
+            .with_context(|_| error::SpawnSshCommandSnafu)?
             .wait()
-            .map_err(|source| Error::WaitForSshProcess { source })?;
+            .with_context(|_| error::WaitForSshProcessSnafu)?;
 
         Ok(())
     }
@@ -108,9 +112,9 @@ impl Tunnel for SshTunnel {
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .spawn()
-            .map_err(|source| Error::SpawnSshCommand { source })?
+            .with_context(|_| error::SpawnSshCommandSnafu)?
             .wait()
-            .map_err(|source| Error::WaitForSshProcess { source })?;
+            .with_context(|_| error::WaitForSshProcessSnafu)?;
 
         Ok(output.success())
     }

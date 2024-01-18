@@ -1,15 +1,21 @@
-{ lib
+{ name
+, version
+, lib
 , rustPlatform
 , installShellFiles
 }:
 
-rustPlatform.buildRustPackage rec {
-  pname = "tunka";
-  version = "0.3.0";
+rustPlatform.buildRustPackage {
+  pname = name;
+  inherit version;
 
-  src = lib.cleanSource ./.;
+  doCheck = false;
 
-  cargoLock.lockFile = ./Cargo.lock;
+  src = lib.cleanSource ./..;
+
+  cargoLock = {
+    lockFile = ../Cargo.lock;
+  };
 
   nativeBuildInputs = [ installShellFiles ];
 
