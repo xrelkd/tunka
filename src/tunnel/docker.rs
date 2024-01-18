@@ -1,11 +1,14 @@
 use std::{
+    net::ToSocketAddrs,
     path::PathBuf,
     process::{Command, ExitStatus, Stdio},
 };
 
+use snafu::ResultExt;
+
 use crate::{
     context::Context,
-    error::Error,
+    error::{self, Error},
     tunnel::{Tunnel, TunnelMeta, TunnelType},
 };
 
@@ -31,10 +34,10 @@ impl DockerTunnel {
         mounts: &[DockerMount],
     ) -> Result<(), Error> {
         let listen_addr = {
-            use std::net::ToSocketAddrs;
-            let addr = format!("{}:{}", self.listen_host, self.listen_port);
-            addr.to_socket_addrs()
-                .map_err(|source| Error::ResolveSocketAddr { addr, source })?
+            let address = format!("{}:{}", self.listen_host, self.listen_port);
+            address
+                .to_socket_addrs()
+                .with_context(|_| error::ResolveSocketAddrSnafu { address })?
                 .next()
                 .ok_or(Error::DomainNotFound { domain: self.listen_host.clone() })?
         };
@@ -69,9 +72,9 @@ impl DockerTunnel {
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())
                 .spawn()
-                .map_err(|source| Error::SpawnDockerCommand { source })?
+                .with_context(|_| error::SpawnDockerCommandSnafu)?
                 .wait()
-                .map_err(|source| Error::WaitForDockerProcess { source })?,
+                .with_context(|_| error::WaitForDockerProcessSnafu)?,
         )
     }
 
@@ -102,14 +105,14 @@ impl Tunnel for DockerTunnel {
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())
                 .spawn()
-                .map_err(|source| Error::SpawnDockerCommand { source })?
+                .with_context(|_| error::SpawnDockerCommandSnafu)?
                 .wait()
-                .map_err(|source| Error::WaitForDockerProcess { source })?;
+                .with_context(|_| error::WaitForDockerProcessSnafu)?;
 
-            return Self::convert_output(exit_status);
+            Self::convert_output(exit_status)
+        } else {
+            Ok(())
         }
-
-        Ok(())
     }
 
     #[inline]
@@ -120,9 +123,9 @@ impl Tunnel for DockerTunnel {
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .spawn()
-            .map_err(|source| Error::SpawnDockerCommand { source })?
+            .with_context(|_| error::SpawnDockerCommandSnafu)?
             .wait()
-            .map_err(|source| Error::WaitForDockerProcess { source })?;
+            .with_context(|_| error::WaitForDockerProcessSnafu)?;
 
         Ok(output.success())
     }

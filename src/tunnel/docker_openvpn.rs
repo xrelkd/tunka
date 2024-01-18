@@ -32,7 +32,7 @@ impl Tunnel for DockerOpenVPNTunnel {
                 m.push(DockerMount {
                     host_endpoint: auth_file.clone(),
                     container_endpoint: PathBuf::from("/auth.txt"),
-                })
+                });
             }
 
             m

@@ -1,25 +1,26 @@
 use std::path::{Path, PathBuf};
 
-use crate::error::Error;
+use snafu::OptionExt;
+
+use crate::{command::Cli, error, error::Error};
 
 pub struct ContextBuilder {
     control_path_directory: PathBuf,
 }
 
 impl ContextBuilder {
-    pub fn new() -> ContextBuilder {
-        use crate::command::Cli;
+    pub fn new() -> Self {
         let control_path_directory = PathBuf::from(format!("/tmp/{}", Cli::app_name()));
-        ContextBuilder { control_path_directory }
+        Self { control_path_directory }
     }
 
-    pub fn control_path_directory<P: AsRef<Path>>(mut self, dir: P) -> ContextBuilder {
+    pub fn control_path_directory<P: AsRef<Path>>(mut self, dir: P) -> Self {
         self.control_path_directory = dir.as_ref().to_owned();
         self
     }
 
     pub fn build(self) -> Result<Context, Error> {
-        let user_name = std::env::var("USER").map_err(|_| Error::UserNameNotFound)?;
+        let user_name = std::env::var("USER").ok().context(error::UserNameNotFoundSnafu)?;
         let home_dir = dirs::home_dir()
             .map(|h| h.to_string_lossy().into())
             .ok_or(Error::HomeDirectoryNotFound)?;
