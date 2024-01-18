@@ -1,13 +1,13 @@
-use std::{
-    collections::BTreeMap,
-    path::{Path, PathBuf},
-};
+use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
+use snafu::ResultExt;
 
 use crate::{
+    error,
     error::Error,
-    tunnel::{self, DockerOpenVPNTunnel, DockerTunnel, SshTunnel, TunnelManager, TunnelMeta},
+    tunnel,
+    tunnel::{DockerOpenVPNTunnel, DockerTunnel, SshTunnel, TunnelManager, TunnelMeta},
 };
 
 #[derive(Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
@@ -127,15 +127,14 @@ pub struct Config {
 
 impl Config {
     #[inline]
-    pub fn from_str(s: &str) -> Result<Config, Error> {
-        let config = serde_yaml::from_str(s).map_err(|source| Error::ParseYamlConfig { source })?;
-        Ok(config)
+    pub fn from_str(s: &str) -> Result<Self, Error> {
+        serde_yaml::from_str(s).context(error::ParseYamlConfigSnafu)
     }
 
     #[inline]
-    pub fn from_file<P: AsRef<Path>>(config_file: P) -> Result<Config, Error> {
-        let content = std::fs::read_to_string(&config_file).map_err(|source| {
-            Error::ReadConfigFile { source, file_path: config_file.as_ref().to_owned() }
+    pub fn from_file<P: AsRef<Path>>(config_file: P) -> Result<Self, Error> {
+        let content = std::fs::read_to_string(&config_file).context({
+            error::ReadConfigFileSnafu { file_path: config_file.as_ref().to_owned() }
         })?;
         Self::from_str(&content)
     }
@@ -144,12 +143,15 @@ impl Config {
     pub fn control_path_directory(&self) -> &Path { &self.control_path_directory }
 
     pub fn into_manager(self) -> TunnelManager {
-        let tunnels = self.tunnels.into_iter().fold(BTreeMap::new(), |mut tunnels, tunnel| {
-            let tunnel: Box<dyn tunnel::Tunnel> = tunnel.into();
-            let tunnel_name = tunnel.name().to_owned();
-            tunnels.insert(tunnel_name, tunnel);
-            tunnels
-        });
+        let tunnels = self
+            .tunnels
+            .into_iter()
+            .map(|tunnel| {
+                let tunnel: Box<dyn tunnel::Tunnel> = tunnel.into();
+                let tunnel_name = tunnel.name().to_string();
+                (tunnel_name, tunnel)
+            })
+            .collect();
 
         TunnelManager { tunnels }
     }
@@ -194,7 +196,7 @@ mod test {
                 listen_host: "127.0.0.1".to_owned(),
                 listen_port: 3128,
             })
-        )
+        );
     }
 
     #[test]
@@ -224,6 +226,6 @@ mod test {
                 user_name: "the-user".to_owned(),
                 identify_file: "/tmp/id".into(),
             })
-        )
+        );
     }
 }

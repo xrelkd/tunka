@@ -20,7 +20,7 @@ pub struct Cli {
 }
 
 impl Default for Cli {
-    fn default() -> Self { Cli::parse() }
+    fn default() -> Self { Self::parse() }
 }
 
 impl Cli {
@@ -91,8 +91,8 @@ pub enum Command {
 
 impl Command {
     #[inline]
-    pub fn is_standalone(&self) -> bool {
-        matches!(self, Command::Version | Command::Completions { .. })
+    pub const fn is_standalone(&self) -> bool {
+        matches!(self, Self::Version | Self::Completions { .. })
     }
 
     pub fn run(
@@ -101,19 +101,19 @@ impl Command {
         manager: Option<TunnelManager>,
     ) -> Result<(), Error> {
         match (self, manager, context) {
-            (Command::Version, ..) => {
+            (Self::Version, ..) => {
                 let mut stdout = std::io::stdout();
                 stdout
                     .write_all(Cli::command().render_long_version().as_bytes())
                     .expect("failed to write to stdout");
                 Ok(())
             }
-            (Command::Completions { shell }, ..) => {
+            (Self::Completions { shell }, ..) => {
                 let mut app = Cli::command();
                 clap_complete::generate(shell, &mut app, Cli::app_name(), &mut std::io::stdout());
                 Ok(())
             }
-            (Command::ListTunnels, Some(manager), _) => {
+            (Self::ListTunnels, Some(manager), _) => {
                 manager.metadata_list().into_iter().for_each(|tunnel| {
                     let name = tunnel.name;
                     let description = tunnel.description.unwrap_or_default();
@@ -121,34 +121,34 @@ impl Command {
                 });
                 Ok(())
             }
-            (Command::Start { tunnels }, Some(manager), Some(context)) => {
+            (Self::Start { tunnels }, Some(manager), Some(context)) => {
                 for tunnel in &tunnels {
                     manager.start(&context, tunnel)?;
                 }
                 Ok(())
             }
-            (Command::Stop { tunnels }, Some(manager), Some(context)) => {
+            (Self::Stop { tunnels }, Some(manager), Some(context)) => {
                 for tunnel in &tunnels {
                     manager.stop(&context, tunnel)?;
                 }
                 Ok(())
             }
-            (Command::Restart { tunnels }, Some(manager), Some(context)) => {
+            (Self::Restart { tunnels }, Some(manager), Some(context)) => {
                 for tunnel in &tunnels {
                     manager.restart(&context, tunnel)?;
                 }
                 Ok(())
             }
-            (Command::Running { tunnels }, Some(manager), Some(context)) => {
+            (Self::Running { tunnels }, Some(manager), Some(context)) => {
                 for tunnel in &tunnels {
                     let is_running = manager.is_running(&context, tunnel)?;
                     println!("{is_running}");
                 }
                 Ok(())
             }
-            (Command::StartAll, Some(manager), Some(context)) => manager.start_all(&context),
-            (Command::StopAll, Some(manager), Some(context)) => manager.stop_all(&context),
-            (Command::RestartAll, Some(manager), Some(context)) => manager.restart_all(&context),
+            (Self::StartAll, Some(manager), Some(context)) => manager.start_all(&context),
+            (Self::StopAll, Some(manager), Some(context)) => manager.stop_all(&context),
+            (Self::RestartAll, Some(manager), Some(context)) => manager.restart_all(&context),
             _ => Ok(()),
         }
     }
