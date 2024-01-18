@@ -3,21 +3,18 @@
 set -euxo pipefail
 
 PACKAGE_NAME="tunka"
-BINARY_NAME="tunka"
-VERSION=${REF#"refs/tags/"}
+VERSION=$(basename "$REF")
 DIST=$(pwd)/dist
 
 echo "Packaging $PACKAGE_NAME $VERSION for $TARGET..."
 
-echo "Building $BINARY_NAME..."
-RUSTFLAGS="--deny warnings --codegen target-feature=+crt-static $TARGET_RUSTFLAGS" \
-    cargo build --bin "$BINARY_NAME" --target "$TARGET" --release
-EXECUTABLE="target/$TARGET/release/$BINARY_NAME"
+echo "Building $PACKAGE_NAME..."
+RUSTFLAGS="$TARGET_RUSTFLAGS" cargo build --target "$TARGET" --release
 
 echo "Copying release files..."
-mkdir dist
+mkdir "$DIST"
+cp -v "target/$TARGET/release/tunka" "$DIST"
 cp \
-    "$EXECUTABLE" \
     LICENSE \
     README.md \
     "$DIST"
@@ -25,9 +22,10 @@ cp \
 cd "$DIST"
 echo "Creating release archive..."
 case "$OS" in
-    ubuntu-latest | macos-latest)
-        ARCHIVE="$DIST/$PACKAGE_NAME-$VERSION-$TARGET.tar.gz"
-        tar czf "$ARCHIVE" *
-        echo "::set-output name=archive::$ARCHIVE"
-        ;;
+ubuntu-latest | macos-latest)
+    ARCHIVE="$DIST/$PACKAGE_NAME-$VERSION-$TARGET.tar.gz"
+    tar czvf "$ARCHIVE" -- *
+    echo "archive=$ARCHIVE" >>"$GITHUB_OUTPUT"
+    ;;
+
 esac
