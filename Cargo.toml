@@ -1,22 +1,24 @@
 [package]
-name = "tunka"
-version = "0.4.0"
-authors = ["xrelkd 46590321+xrelkd@users.noreply.github.com"]
-edition = "2021"
-license = "GPL-3.0"
-repository = "https://github.com/xrelkd/tunka"
-description = "Simple tunnel manager"
-categories = ["accessibility"]
-readme = "README.md"
+name         = "tunka"
+description  = "Simple tunnel manager"
+version      = "0.4.0"
+homepage     = "https://github.com/xrelkd/tunka"
+repository   = "https://github.com/xrelkd/tunka"
+authors      = ["xrelkd 46590321+xrelkd@users.noreply.github.com"]
+edition      = "2021"
+license      = "GPL-3.0-only"
+categories   = ["accessibility"]
+readme       = "README.md"
+rust-version = "1.70"
 
 [dependencies]
-serde = { version = "1", features = ["derive"] }
+serde      = { version = "1", features = ["derive"] }
 serde_yaml = "0.9"
 
-tracing = "0.1"
+tracing            = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
-clap = { version = "4", features = ["derive"] }
+clap          = { version = "4", features = ["derive"] }
 clap_complete = "4"
-dirs = "5"
-snafu = "0.7"
+dirs          = "5"
+snafu         = "0.7"
