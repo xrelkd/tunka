@@ -16,8 +16,8 @@
 
   outputs = { self, nixpkgs, flake-utils, fenix, crane }:
     let
+      cargoToml = builtins.fromTOML (builtins.readFile ./Cargo.toml);
       name = "tunka";
-      version = "0.4.1";
     in
     (flake-utils.lib.eachDefaultSystem
       (system:
@@ -70,16 +70,20 @@
           formatter = pkgs.treefmt;
 
           devShells.default = pkgs.callPackage ./devshell {
+            inherit (pkgs) darwin;
             inherit rustToolchain cargoArgs unitTestArgs;
           };
 
           packages = rec {
             default = tunka;
             tunka = pkgs.callPackage ./devshell/package.nix {
-              inherit name version rustPlatform;
+              inherit (pkgs) darwin;
+              inherit (cargoToml.package) version;
+              inherit name rustPlatform;
             };
             container = pkgs.callPackage ./devshell/container.nix {
-              inherit name version tunka;
+              inherit (cargoToml.package) version;
+              inherit name tunka;
             };
           };
 
