@@ -15,7 +15,7 @@ impl ContextBuilder {
     }
 
     pub fn control_path_directory<P: AsRef<Path>>(mut self, dir: P) -> Self {
-        self.control_path_directory = dir.as_ref().to_owned();
+        dir.as_ref().clone_into(&mut self.control_path_directory);
         self
     }
 
