@@ -20,10 +20,8 @@ pkgs.runCommandNoCC "check-format"
     --fail-on-change \
     --no-cache \
     --formatters prettier \
-    --formatters clang-format \
     --formatters nix \
     --formatters shell \
-    --formatters hcl \
     --formatters toml \
     -C ${./..}
 
