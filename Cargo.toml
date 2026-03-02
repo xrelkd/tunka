@@ -22,7 +22,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 clap          = { version = "4", features = ["derive"] }
 clap_complete = "4"
 dirs          = "6"
-snafu         = "0.8"
+snafu         = "0.9"
 
 [lints]
 workspace = true
