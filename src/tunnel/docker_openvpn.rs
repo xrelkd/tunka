@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use crate::{
     context::Context,
     error::Error,
-    tunnel::{docker::DockerMount, DockerTunnel, Tunnel, TunnelMeta, TunnelType},
+    tunnel::{DockerTunnel, Tunnel, TunnelMeta, TunnelType, docker::DockerMount},
 };
 
 #[derive(Debug, Clone)]

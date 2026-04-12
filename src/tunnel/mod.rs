@@ -74,7 +74,7 @@ impl TunnelManager {
         let tunnel = self
             .tunnels
             .get(tunnel_name)
-            .ok_or(Error::TunnelNotFound { tunnel: tunnel_name.to_owned() })?;
+            .ok_or_else(|| Error::TunnelNotFound { tunnel: tunnel_name.to_owned() })?;
         println!("Start {} {tunnel_name}", tunnel.tunnel_type());
 
         tunnel.start(context)?;
@@ -87,7 +87,7 @@ impl TunnelManager {
         let tunnel = self
             .tunnels
             .get(tunnel_name)
-            .ok_or(Error::TunnelNotFound { tunnel: tunnel_name.to_owned() })?;
+            .ok_or_else(|| Error::TunnelNotFound { tunnel: tunnel_name.to_owned() })?;
 
         if tunnel.is_running(context)? {
             tracing::info!("Stop {} {tunnel_name}", tunnel.tunnel_type());
@@ -102,7 +102,7 @@ impl TunnelManager {
     pub fn restart(&self, context: &Context, tunnel_name: &str) -> Result<(), Error> {
         self.tunnels
             .get(tunnel_name)
-            .ok_or(Error::TunnelNotFound { tunnel: tunnel_name.to_owned() })?
+            .ok_or_else(|| Error::TunnelNotFound { tunnel: tunnel_name.to_owned() })?
             .restart(context)
     }
 
@@ -121,7 +121,7 @@ impl TunnelManager {
     pub fn is_running(&self, context: &Context, tunnel_name: &str) -> Result<bool, Error> {
         self.tunnels
             .get(tunnel_name)
-            .ok_or(Error::TunnelNotFound { tunnel: tunnel_name.to_owned() })?
+            .ok_or_else(|| Error::TunnelNotFound { tunnel: tunnel_name.to_owned() })?
             .is_running(context)
     }
 
