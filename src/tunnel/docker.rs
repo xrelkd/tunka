@@ -39,7 +39,7 @@ impl DockerTunnel {
                 .to_socket_addrs()
                 .with_context(|_| error::ResolveSocketAddrSnafu { address })?
                 .next()
-                .ok_or(Error::DomainNotFound { domain: self.listen_host.clone() })?
+                .ok_or_else(|| Error::DomainNotFound { domain: self.listen_host.clone() })?
         };
 
         let mut args = vec![

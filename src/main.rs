@@ -4,7 +4,7 @@ mod context;
 mod error;
 mod tunnel;
 
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
+use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 
 use self::command::Cli;
 
