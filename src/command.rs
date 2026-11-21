@@ -92,7 +92,7 @@ pub enum Command {
 impl Command {
     #[inline]
     pub const fn is_standalone(&self) -> bool {
-        matches!(self, Self::Version | Self::Completions { .. })
+        matches!(self, Self::Version | Self::Completions { shell: _ })
     }
 
     pub fn run(

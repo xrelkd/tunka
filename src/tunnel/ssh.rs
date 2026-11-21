@@ -30,7 +30,15 @@ impl SshTunnel {
             context.control_path_directory(),
             PathBuf::from({
                 let tunnel_name = self.name();
-                let Self { user_name, remote_host, remote_port, .. } = self;
+                let Self {
+                    user_name,
+                    remote_host,
+                    remote_port,
+                    meta: _,
+                    identify_file: _,
+                    listen_host: _,
+                    listen_port: _,
+                } = self;
                 format!("{tunnel_name}_{user_name}@{remote_host}:{remote_port}.socket")
             }),
         ])
