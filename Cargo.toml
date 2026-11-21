@@ -1,12 +1,12 @@
 [package]
 name         = "tunka"
 description  = "Simple tunnel manager"
-version      = "0.4.6"
+version      = "0.4.7"
 homepage     = "https://github.com/xrelkd/tunka"
 repository   = "https://github.com/xrelkd/tunka"
 authors      = ["xrelkd 46590321+xrelkd@users.noreply.github.com"]
 edition      = "2024"
-rust-version = "1.93"
+rust-version = "1.98"
 license      = "GPL-3.0-only"
 categories   = ["accessibility"]
 keywords     = ["tunnel"]
