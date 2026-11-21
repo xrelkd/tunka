@@ -132,7 +132,10 @@ impl Config {
     }
 
     #[inline]
-    pub fn from_file<P: AsRef<Path>>(config_file: P) -> Result<Self, Error> {
+    pub fn from_file<P>(config_file: P) -> Result<Self, Error>
+    where
+        P: AsRef<Path>,
+    {
         let content = std::fs::read_to_string(&config_file).context({
             error::ReadConfigFileSnafu { file_path: config_file.as_ref().to_owned() }
         })?;
@@ -168,7 +171,7 @@ mod test {
             tunnels: []
             ";
         let config = Config::from_str(data).unwrap();
-        assert!(config.tunnels.is_empty());
+        assert_eq!(config.tunnels, Vec::new());
     }
 
     #[test]

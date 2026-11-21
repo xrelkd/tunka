@@ -14,7 +14,10 @@ impl ContextBuilder {
         Self { control_path_directory }
     }
 
-    pub fn control_path_directory<P: AsRef<Path>>(mut self, dir: P) -> Self {
+    pub fn control_path_directory<P>(mut self, dir: P) -> Self
+    where
+        P: AsRef<Path>,
+    {
         dir.as_ref().clone_into(&mut self.control_path_directory);
         self
     }
@@ -42,7 +45,10 @@ impl Context {
         s.replace("$USER", &self.user_name).replace("$HOME", &self.home_dir)
     }
 
-    pub fn apply_path<P: AsRef<Path>>(&self, path: P) -> PathBuf {
+    pub fn apply_path<P>(&self, path: P) -> PathBuf
+    where
+        P: AsRef<Path>,
+    {
         path.as_ref().iter().map(|p| self.apply(&p.to_string_lossy())).collect()
     }
 
